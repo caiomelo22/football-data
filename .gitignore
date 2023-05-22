@@ -8,6 +8,7 @@ __pycache__/
 
 # User specific files
 config.py
+leagues/
 
 # Distribution / packaging
 .Python
