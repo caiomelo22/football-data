@@ -77,12 +77,12 @@ class BetExplorerScrapperService(DriverMixin):
                     match_info = [
                         self.transform_odds_date(date),
                         home_team,
-                        home_score,
-                        home_odds,
+                        int(home_score),
+                        float(home_odds),
                         away_team,
-                        away_score,
-                        away_odds,
-                        draw_odds,
+                        int(away_score),
+                        float(away_odds),
+                        float(draw_odds),
                     ]
                     self.bet_explorer_seasons[season].append(match_info)
                     total_games += 1

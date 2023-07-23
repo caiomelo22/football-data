@@ -91,4 +91,10 @@ class ScrapperService(FbrefScrapperService, BetExplorerScrapperService):
                 except:
                     continue
 
-            self.fbref_seasons[season] = fbref_season
+            self.fbref_seasons[season].rename(
+                columns=lambda x: x.replace(":", "_")
+                .replace("%", "_pct")
+                .replace("-", "_")
+                .replace("/", "_"),
+                inplace=True,
+            )

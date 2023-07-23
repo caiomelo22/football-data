@@ -1,3 +1,6 @@
+mysql-connector-python
+numpy
+python-dotenv
 pandas
 selenium==4.10.0
 undetected-chromedriver==3.5.0

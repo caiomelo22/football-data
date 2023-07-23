@@ -1,3 +1,4 @@
 from .scrapper import ScrapperService
+from .mysql import MySQLService
 
-__all__ = ["ScrapperService"]
+__all__ = ["ScrapperService", "MySQLService"]

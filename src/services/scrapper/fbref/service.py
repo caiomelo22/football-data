@@ -134,10 +134,10 @@ class FbrefScrapperService(DriverMixin):
                     date,
                     week,
                     home_team,
-                    home_xg,
-                    home_score,
-                    away_score,
-                    away_xg,
+                    float(home_xg),
+                    int(home_score),
+                    int(away_score),
+                    float(away_xg),
                     away_team,
                 ]
                 self.fbref_seasons[season].append(match_info)
@@ -203,7 +203,7 @@ class FbrefScrapperService(DriverMixin):
 
                         stats = []
                         for stat_col in selected_stats[stat_type]:
-                            stats.append(self.get_value(stat_col, tds, cols))
+                            stats.append(float(self.get_value(stat_col, tds, cols) or 0))
 
                         self.save_game_stats(
                             season,

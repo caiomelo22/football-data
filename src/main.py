@@ -1,18 +1,23 @@
-from services import ScrapperService
+import pandas as pd
+from services import ScrapperService, MySQLService
+from dotenv import load_dotenv
 
-# General info
+# Load environment variables from the .env file
+load_dotenv()
+
+# General infoss
 single_year_season = True
-start_season = 2023
+start_season = 2018
 end_season = 2024
 
 # Fbref info
-fbref_league = "Serie-A"
-fbref_league_id = 24
+fbref_league = "Major-League-Soccer"
+fbref_league_id = 22
 
 # BetExplorer info
-bet_explorer_league = "serie-a"
-bet_explorer_country = "brazil"
-bet_explorer_stage = ""
+bet_explorer_league = "mls"
+bet_explorer_country = "usa"
+bet_explorer_stage = "Main"
 
 scrapper_service = ScrapperService(
     start_season=start_season,
@@ -34,4 +39,14 @@ scrapper_service.bet_explorer_scrapper()
 scrapper_service.close_driver()
 
 scrapper_service.match_seasons_data()
-print(scrapper_service.fbref_seasons[2023])
+
+mysql_service = MySQLService()
+mysql_service.connect()
+first_season = next(iter(scrapper_service.fbref_seasons))
+mysql_service.create_table_from_df("matches", scrapper_service.fbref_seasons[first_season])
+
+for season in scrapper_service.fbref_seasons:
+    data_list = scrapper_service.fbref_seasons[season].to_dict(orient="records")
+    mysql_service.insert_multiple_rows("matches", data_list)
+    
+mysql_service.close()
