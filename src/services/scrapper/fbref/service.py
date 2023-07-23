@@ -7,7 +7,8 @@ from ..mixins import DriverMixin
 
 class FbrefScrapperService(DriverMixin):
     def __init__(self, league, league_id, start_season, end_season, single_year_season):
-        super().__init__(
+        DriverMixin.__init__(
+            self,
             start_season=start_season,
             end_season=end_season,
             single_year_season=single_year_season,

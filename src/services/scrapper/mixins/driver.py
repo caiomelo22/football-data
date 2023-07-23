@@ -1,5 +1,5 @@
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium import webdriver
+import undetected_chromedriver as uc
+import shutil
 
 class DriverMixin:
     def __init__(self, start_season, end_season, single_year_season):
@@ -9,12 +9,10 @@ class DriverMixin:
         self.driver = None
 
     def start_driver(self):
-        options = webdriver.ChromeOptions()
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
-        options.add_argument("--disable-blink-features=AutomationControlled")
-        self.driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
-        # driver.maximize_window()
+        options = uc.ChromeOptions()
+        options.headless = False
+        self.driver = uc.Chrome(options=options, executable_path=shutil.which('chromedriver'))
+        self.driver.maximize_window()
 
     def close_driver(self):
         self.driver.close()

@@ -8,7 +8,8 @@ class BetExplorerScrapperService(DriverMixin):
     def __init__(
         self, country, league, stage, start_season, end_season, single_year_season
     ):
-        super().__init__(
+        DriverMixin.__init__(
+            self,
             start_season=start_season,
             end_season=end_season,
             single_year_season=single_year_season,

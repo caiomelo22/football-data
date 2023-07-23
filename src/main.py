@@ -25,10 +25,13 @@ scrapper_service = ScrapperService(
     be_stage=bet_explorer_stage,
 )
 
+scrapper_service.start_driver()
 scrapper_service.fbref_scrapper()
 scrapper_service.fbref_advanced_stats_scrapper()
+scrapper_service.combine_fbref_stats()
 
 scrapper_service.bet_explorer_scrapper()
+scrapper_service.close_driver()
 
 scrapper_service.match_seasons_data()
 print(scrapper_service.fbref_seasons[2023])
