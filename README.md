@@ -1,22 +1,26 @@
-# Football-Data
-Project designed to gather, clean and store data from football leagues on the API-Football api.
+# Intro
+Project designed to gather and store data from football leagues scrapped on the betexplorer and fbref websites. This project collects stats and advanced stats from the fbref website and gathers odds info for each match on BetExplorer. In the end, it combines all of the information into your MySQL server.
 
 # Setup
-In order to run this program, you are gonna have to sign up on the [API-Football](https://www.api-football.com/pricing) website. You can sign up for free with up to 100 request a day. When you're done setting up your account, an access token will be given to you, which will be used in the request headers. To use the access token and set your database variables, you're gonna have to create a config.py file with the following variables:
+In order to run this program, you are gonna have to create a `.env` file in the root of the project. In this env file, you'll have to set the following variables to connect to your host MySQL server:
 
 ```
-api_football_key = YOUR_ACCESS_TOKEN
-conn_host = YOUR_CONNECTION_HOST
-conn_database = YOUR_CONNECTION_DATABASE
-conn_user = YOUR_CONNECTION_USER
-conn_password = YOUR_CONNECTION_PASSWORD
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=pwd
+DB_DATABASE=football-data
 ```
 
-# Collecting Odds
-In order to scrape the odds for the matches that you've collected in the main program, you have to run the odds.py program to do a web scrapping job in the Odds Portal website. The only issue with this website is that the names of some of the teams might be different from the ones registered in the API used to get the matches. In order to fix this issue, you have to manually change the name of the teams in the database to the ones written in the Odds Portal website. For exemaple, the name of a team in the API was "Atletico Paranaense" while in the odds website was "Athletico-PR".
+After that, just run the pip install command and run the main.py program!
 
-# Selecting the League
-The default league used in this project is the brazilian Serie A. If you want to collect data from other leagues, first of all you have to change the league id set in the main.ipynb program. The other thing that needs to be changed is the Odds Portal url parameters set in the odds.ipynb program. To check which parameters you need, go to the [Odds Portal](https://www.oddsportal.com/) website to check which are the parameters of your country/league selected.
+```
+>> pip install -r requirements.txt
+>> python ./src/main.py
+```
 
-And that's it! Now you can make requests to the API, store football fixtures from your favorite leagues in your database and get the odds from each match. Enjoy!
+## Customize leagues
+If you want to scrape matches from different leagues, just clone the project and mess around with the `main.py` global parameters. They're set based on the URI information from the sites mentioned before.
+
+# Disclaimer
+This project was made for educational purposes only. The data gathered with this project was used for private projects only, of which are not used to sell it in any way.
 
