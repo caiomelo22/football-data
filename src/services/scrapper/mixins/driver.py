@@ -10,9 +10,8 @@ class DriverMixin:
 
     def start_driver(self):
         options = uc.ChromeOptions()
-        options.headless = False
+        options.headless = True
         self.driver = uc.Chrome(options=options, executable_path=shutil.which('chromedriver'))
-        self.driver.maximize_window()
 
     def close_driver(self):
         self.driver.close()

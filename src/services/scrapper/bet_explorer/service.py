@@ -34,8 +34,6 @@ class BetExplorerScrapperService(DriverMixin):
             url = f"https://www.betexplorer.com/football/{self.bet_explorer_country}/{self.bet_explorer_league}{season_str}/results/"
             self.driver.get(url)
 
-            self.driver.maximize_window()
-
             try:
                 if self.stage:
                     btn = self.driver.find_element(
