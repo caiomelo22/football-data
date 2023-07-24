@@ -1,5 +1,4 @@
 import undetected_chromedriver as uc
-import shutil
 
 class DriverMixin:
     def __init__(self, start_season, end_season, single_year_season):
@@ -11,7 +10,7 @@ class DriverMixin:
     def start_driver(self):
         options = uc.ChromeOptions()
         options.headless = True
-        self.driver = uc.Chrome(options=options, executable_path=shutil.which('chromedriver'))
+        self.driver = uc.Chrome(options=options)
 
     def close_driver(self):
         self.driver.close()
