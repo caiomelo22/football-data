@@ -7,16 +7,16 @@ load_dotenv()
 
 # General infoss
 single_year_season = True
-start_season = 2019
+start_season = 2023
 end_season = 2024
 
 # Fbref info
-fbref_league = "Serie-A"
-fbref_league_id = 24
+fbref_league = "Major-League-Soccer"
+fbref_league_id = 22
 
 # BetExplorer info
-bet_explorer_league = "serie-a"
-bet_explorer_country = "brazil"
+bet_explorer_league = "mls"
+bet_explorer_country = "usa"
 bet_explorer_stage = ""
 
 scrapper_service = ScrapperService(
@@ -41,7 +41,6 @@ scrapper_service.close_driver()
 scrapper_service.match_seasons_data()
 
 mysql_service = MySQLService()
-mysql_service.connect()
 first_season = next(iter(scrapper_service.fbref_seasons))
 mysql_service.create_table_from_df("matches", scrapper_service.fbref_seasons[first_season])
 
