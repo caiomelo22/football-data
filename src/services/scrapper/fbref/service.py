@@ -57,8 +57,6 @@ class FbrefScrapperService(DriverMixin):
             url = f"https://fbref.com/en/comps/{self.fbref_league_id}/{season_str}/schedule/{self.fbref_league}-Scores-and-Fixtures"
             self.driver.get(url)
 
-            self.driver.maximize_window()
-
             fb = self.driver.find_element(By.CLASS_NAME, "fb")
             rows = fb.find_elements(By.XPATH, "//table/tbody/tr")
 
@@ -130,16 +128,19 @@ class FbrefScrapperService(DriverMixin):
                     [(home_squad_id, home_team), (away_squad_id, away_team)]
                 )
                 home_score, away_score = score.split("–")
-                match_info = [
-                    date,
-                    week,
-                    home_team,
-                    float(home_xg),
-                    int(home_score),
-                    int(away_score),
-                    float(away_xg),
-                    away_team,
-                ]
+                try:
+                    match_info = [
+                        date,
+                        week,
+                        home_team,
+                        float(home_xg),
+                        int(home_score),
+                        int(away_score),
+                        float(away_xg),
+                        away_team,
+                    ]
+                except ValueError:
+                    continue
                 self.fbref_seasons[season].append(match_info)
                 total_games += 1
 
