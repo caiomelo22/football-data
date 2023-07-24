@@ -130,6 +130,8 @@ class FbrefScrapperService(DriverMixin):
                 home_score, away_score = score.split("–")
                 try:
                     match_info = [
+                        season,
+                        self.fbref_league.lower(),
                         date,
                         week,
                         home_team,
@@ -233,6 +235,8 @@ class FbrefScrapperService(DriverMixin):
             )
 
             columns = [
+                "season",
+                "league",
                 "date",
                 "week",
                 "home_team",

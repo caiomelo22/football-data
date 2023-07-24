@@ -46,8 +46,6 @@ first_season = next(iter(scrapper_service.fbref_seasons))
 mysql_service.create_table_from_df("matches", scrapper_service.fbref_seasons[first_season])
 
 for season in scrapper_service.fbref_seasons:
-    scrapper_service.fbref_seasons[season]["league"] = bet_explorer_league
-    scrapper_service.fbref_seasons[season]["season"] = season
     data_list = scrapper_service.fbref_seasons[season].to_dict(orient="records")
     mysql_service.insert_multiple_rows("matches", data_list)
     
