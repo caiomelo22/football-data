@@ -5,25 +5,23 @@ from dotenv import load_dotenv
 # Load environment variables from the .env file
 load_dotenv()
 
-# General infoss
-single_year_season = True
-start_season = 2023
-end_season = 2024
+# General infos
+single_year_season = False
+start_season = 2021
+end_season = 2023
 
 # Fbref info
-fbref_league = "Major-League-Soccer"
-fbref_league_id = 22
+fbref_league_id = 9
 
 # BetExplorer info
-bet_explorer_league = "mls"
-bet_explorer_country = "usa"
+bet_explorer_league = "premier-league"
+bet_explorer_country = "england"
 bet_explorer_stage = ""
 
 scrapper_service = ScrapperService(
     start_season=start_season,
     end_season=end_season,
     single_year_season=single_year_season,
-    fbref_league=fbref_league,
     fbref_league_id=fbref_league_id,
     be_country=bet_explorer_country,
     be_league=bet_explorer_league,

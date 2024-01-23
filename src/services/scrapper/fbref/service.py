@@ -54,7 +54,7 @@ class FbrefScrapperService(DriverMixin):
                 str(season) if self.single_year_season else f"{season}-{season+1}"
             )
 
-            url = f"https://fbref.com/en/comps/{self.fbref_league_id}/{season_str}/schedule/{self.fbref_league}-Scores-and-Fixtures"
+            url = f"https://fbref.com/en/comps/{self.fbref_league_id}/{season_str}/schedule/Scores-and-Fixtures"
             self.driver.get(url)
 
             fb = self.driver.find_element(By.CLASS_NAME, "fb")
@@ -65,8 +65,12 @@ class FbrefScrapperService(DriverMixin):
                 print(f"{season}/{self.end_season-1} {i}/{len(rows)}")
                 if not r.text:
                     continue
-                tds = r.find_elements(By.XPATH, ".//child::td")
-                week = r.find_element(By.XPATH, ".//child::th").text
+
+                try:
+                    tds = r.find_elements(By.XPATH, ".//child::td")
+                    week = r.find_element(By.XPATH, ".//child::th").text
+                except:
+                    continue
 
                 if len(tds) == 12:
                     (
