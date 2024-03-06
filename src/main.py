@@ -1,4 +1,4 @@
-import pandas as pd
+import numpy as np
 from services import ScrapperService, MySQLService
 from dotenv import load_dotenv
 
@@ -7,43 +7,45 @@ load_dotenv()
 
 # General infos
 single_year_season = False
-start_season = 2021
+start_season = 2018
 end_season = 2023
 
 # Fbref info
-fbref_league_id = 9
+fbref_league_id = 20
 
 # BetExplorer info
-bet_explorer_league = "premier-league"
-bet_explorer_country = "england"
+bet_explorer_league = "bundesliga"
+bet_explorer_country = "germany"
 bet_explorer_stage = ""
 
-scrapper_service = ScrapperService(
-    start_season=start_season,
-    end_season=end_season,
-    single_year_season=single_year_season,
-    fbref_league_id=fbref_league_id,
-    be_country=bet_explorer_country,
-    be_league=bet_explorer_league,
-    be_stage=bet_explorer_stage,
-)
+for season in range(start_season, end_season + 1):
+    scrapper_service = ScrapperService(
+        season=season,
+        single_year_season=single_year_season,
+        fbref_league_id=fbref_league_id,
+        be_country=bet_explorer_country,
+        be_league=bet_explorer_league,
+        be_stage=bet_explorer_stage,
+    )
 
-scrapper_service.start_driver()
-scrapper_service.fbref_scrapper()
-scrapper_service.fbref_advanced_stats_scrapper()
-scrapper_service.combine_fbref_stats()
+    scrapper_service.start_driver()
+    scrapper_service.fbref_scrapper()
+    scrapper_service.fbref_advanced_stats_scrapper()
+    scrapper_service.combine_fbref_stats()
 
-scrapper_service.bet_explorer_scrapper()
-scrapper_service.close_driver()
+    scrapper_service.bet_explorer_scrapper()
+    scrapper_service.close_driver()
 
-scrapper_service.match_seasons_data()
+    scrapper_service.match_seasons_data()
 
-mysql_service = MySQLService()
-first_season = next(iter(scrapper_service.fbref_seasons))
-mysql_service.create_table_from_df("matches", scrapper_service.fbref_seasons[first_season])
+    mysql_service = MySQLService()
 
-for season in scrapper_service.fbref_seasons:
-    data_list = scrapper_service.fbref_seasons[season].to_dict(orient="records")
+    if season == start_season:
+        mysql_service.create_table_from_df("matches", scrapper_service.fbref_season)
+
+    scrapper_service.fbref_season = scrapper_service.fbref_season.replace({np.nan: 0})
+
+    data_list = scrapper_service.fbref_season.to_dict(orient="records")
     mysql_service.insert_multiple_rows("matches", data_list)
-    
-mysql_service.close()
+        
+    mysql_service.close()
