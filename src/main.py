@@ -7,7 +7,7 @@ load_dotenv()
 
 # General infos
 single_year_season = False
-start_season = 2018
+start_season = 2023
 end_season = 2023
 
 # Fbref info
@@ -17,6 +17,7 @@ fbref_league_id = 20
 bet_explorer_league = "bundesliga"
 bet_explorer_country = "germany"
 bet_explorer_stage = ""
+bet_explorer_hide_last_season_str = True
 
 for season in range(start_season, end_season + 1):
     scrapper_service = ScrapperService(
@@ -33,7 +34,11 @@ for season in range(start_season, end_season + 1):
     scrapper_service.fbref_advanced_stats_scrapper()
     scrapper_service.combine_fbref_stats()
 
-    scrapper_service.bet_explorer_scrapper()
+    if bet_explorer_hide_last_season_str and season == end_season:
+        scrapper_service.bet_explorer_scrapper(hide_last_season_str=True)
+    else:
+        scrapper_service.bet_explorer_scrapper()
+
     scrapper_service.close_driver()
 
     scrapper_service.match_seasons_data()

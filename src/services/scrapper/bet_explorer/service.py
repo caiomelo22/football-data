@@ -20,10 +20,12 @@ class BetExplorerScrapperService(DriverMixin):
     def transform_odds_date(self, date):
         return dt.strptime(date, "%d.%m.%Y")
 
-    def bet_explorer_scrapper(self):
+    def bet_explorer_scrapper(self, hide_last_season_str = False):
         self.bet_explorer_season = []
 
-        if self.single_year_season:
+        if hide_last_season_str:
+            season_str = ""
+        elif self.single_year_season:
             season_str = f"-{self.season}" if self.season != 2023 else ""
         else:
             season_str = f"-{self.season}-{self.season+1}" if self.season != 2022 else ""
