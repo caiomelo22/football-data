@@ -14,6 +14,7 @@ class FbrefScrapperService(DriverMixin):
         )
         self.fbref_league_id = league_id
         self.fbref_league = league
+        self.games_stats_dict = {}
 
     def get_teams_squad_id(self, home_td_index, tds):
         if (
@@ -235,7 +236,12 @@ class FbrefScrapperService(DriverMixin):
     def complete_stats(self, game_stats, reg_cols):
         reg_dict = {col: stat for col, stat in zip(reg_cols, game_stats)}
         game_key = (reg_dict["home_team"], reg_dict["away_team"], reg_dict["date"])
-        advanced_stats_dict = self.games_stats_dict.get(game_key, {})
+        
+        if self.games_stats_dict:
+            advanced_stats_dict = self.games_stats_dict.get(game_key, {})
+        else:
+            advanced_stats_dict = dict()
+
         game_dict = {**reg_dict, **advanced_stats_dict}
         return game_dict
 

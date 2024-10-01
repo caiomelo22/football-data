@@ -1,3 +1,4 @@
+import time
 from datetime import datetime as dt
 from selenium.webdriver.common.by import By
 
@@ -26,12 +27,14 @@ class BetExplorerScrapperService(DriverMixin):
         if hide_last_season_str:
             season_str = ""
         elif self.single_year_season:
-            season_str = f"-{self.season}" if self.season != 2023 else ""
+            season_str = f"-{self.season}"
         else:
-            season_str = f"-{self.season}-{self.season+1}" if self.season != 2022 else ""
+            season_str = f"-{self.season}-{self.season+1}"
 
         url = f"https://www.betexplorer.com/football/{self.bet_explorer_country}/{self.bet_explorer_league}{season_str}/results/"
         self.driver.get(url)
+
+        time.sleep(3)
 
         try:
             if self.stage:
@@ -39,6 +42,8 @@ class BetExplorerScrapperService(DriverMixin):
                     By.XPATH, f"//*[contains(text(), '{self.stage}')]"
                 )
                 btn.click()
+
+                time.sleep(3)
         except:
             pass
 
