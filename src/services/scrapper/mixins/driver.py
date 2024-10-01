@@ -1,4 +1,7 @@
-import undetected_chromedriver as uc
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 
 class DriverMixin:
     def __init__(self, season, single_year_season):
@@ -7,9 +10,17 @@ class DriverMixin:
         self.driver = None
 
     def start_driver(self):
-        options = uc.ChromeOptions()
-        options.headless = True
-        self.driver = uc.Chrome(options=options)
+        # Set Chrome options (for example, to run headless if desired)
+        chrome_options = Options()
+        chrome_options.headless = True  # Run headless if needed
+        
+        # Fetch the latest ChromeDriver version and start the driver
+        service = Service(ChromeDriverManager().install())
+
+        # Start the Chrome driver with the given service and options
+        self.driver = webdriver.Chrome(service=service, options=chrome_options)
 
     def close_driver(self):
-        self.driver.close()
+        # Gracefully close the driver
+        if self.driver:
+            self.driver.quit()
