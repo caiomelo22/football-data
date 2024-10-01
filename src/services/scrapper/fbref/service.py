@@ -43,7 +43,7 @@ class FbrefScrapperService(DriverMixin):
         )
         return home_squad_id, away_squad_id
 
-    def fbref_scrapper(self):
+    def fbref_scrapper(self, include_advanced_stats):
         self.fbref_season = []
         self.fbref_squad_ids = []
 
@@ -72,7 +72,26 @@ class FbrefScrapperService(DriverMixin):
             except:
                 continue
 
-            if len(tds) == 12:
+            if len(tds) == 11:
+                (
+                    _,
+                    date,
+                    _,
+                    home_team,
+                    score,
+                    away_team,
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                ) = [t.text for t in tds]
+                
+                home_xg, away_xg = None, None
+
+                if include_advanced_stats:
+                    home_squad_id, away_squad_id = self.get_teams_squad_id(2, tds)
+            elif len(tds) == 12:
                 (
                     date,
                     _,
@@ -87,7 +106,9 @@ class FbrefScrapperService(DriverMixin):
                     _,
                     _,
                 ) = [t.text for t in tds]
-                home_squad_id, away_squad_id = self.get_teams_squad_id(2, tds)
+
+                if include_advanced_stats:
+                    home_squad_id, away_squad_id = self.get_teams_squad_id(2, tds)
             elif len(tds) == 13:
                 (
                     _,
@@ -104,7 +125,9 @@ class FbrefScrapperService(DriverMixin):
                     _,
                     _,
                 ) = [t.text for t in tds]
-                home_squad_id, away_squad_id = self.get_teams_squad_id(3, tds)
+
+                if include_advanced_stats:
+                    home_squad_id, away_squad_id = self.get_teams_squad_id(3, tds)
             elif len(tds) == 14:
                 (
                     _,
@@ -122,16 +145,22 @@ class FbrefScrapperService(DriverMixin):
                     _,
                     _,
                 ) = [t.text for t in tds]
-                home_squad_id, away_squad_id = self.get_teams_squad_id(4, tds)
+                
+                if include_advanced_stats:
+                    home_squad_id, away_squad_id = self.get_teams_squad_id(4, tds)
             else:
                 continue
 
             if not score:
                 continue
-            self.fbref_squad_ids.extend(
-                [(home_squad_id, home_team), (away_squad_id, away_team)]
-            )
+
+            if include_advanced_stats:
+                self.fbref_squad_ids.extend(
+                    [(home_squad_id, home_team), (away_squad_id, away_team)]
+                )
+
             home_score, away_score = score.split("–")
+
             try:
                 match_info = [
                     self.season,
@@ -139,10 +168,10 @@ class FbrefScrapperService(DriverMixin):
                     date,
                     week,
                     home_team,
-                    float(home_xg),
+                    float(home_xg) if home_xg is not None else None,
                     int(home_score),
                     int(away_score),
-                    float(away_xg),
+                    float(away_xg) if away_xg is not None else None,
                     away_team,
                 ]
             except ValueError:
@@ -151,7 +180,8 @@ class FbrefScrapperService(DriverMixin):
             self.fbref_season.append(match_info)
             total_games += 1
 
-        self.fbref_squad_ids = set(self.fbref_squad_ids)
+        if include_advanced_stats:
+            self.fbref_squad_ids = set(self.fbref_squad_ids)
 
     def get_value(self, attr, tds, cols):
         col_index = cols.index(attr)
@@ -236,7 +266,7 @@ class FbrefScrapperService(DriverMixin):
     def complete_stats(self, game_stats, reg_cols):
         reg_dict = {col: stat for col, stat in zip(reg_cols, game_stats)}
         game_key = (reg_dict["home_team"], reg_dict["away_team"], reg_dict["date"])
-        
+
         if self.games_stats_dict:
             advanced_stats_dict = self.games_stats_dict.get(game_key, {})
         else:
