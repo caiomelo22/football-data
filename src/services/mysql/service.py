@@ -75,7 +75,7 @@ class MySQLService:
         try:
             columns = data_list[0].keys()
             values = [tuple(row.values()) for row in data_list]
-            query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+            query = f"INSERT IGNORE INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
             self.cursor.executemany(query, values)
             self.conn.commit()
             print("Multiple rows inserted successfully.")
