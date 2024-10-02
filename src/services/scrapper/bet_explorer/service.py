@@ -6,9 +6,7 @@ from ..mixins import DriverMixin
 
 
 class BetExplorerScrapperService(DriverMixin):
-    def __init__(
-        self, country, league, stage, season, single_year_season
-    ):
+    def __init__(self, country, league, stage, season, single_year_season):
         DriverMixin.__init__(
             self,
             season=season,
@@ -21,7 +19,7 @@ class BetExplorerScrapperService(DriverMixin):
     def transform_odds_date(self, date):
         return dt.strptime(date, "%d.%m.%Y")
 
-    def bet_explorer_scrapper(self, hide_last_season_str = False):
+    def bet_explorer_scrapper(self, hide_last_season_str=False):
         self.bet_explorer_season = []
 
         if hide_last_season_str:
@@ -34,7 +32,7 @@ class BetExplorerScrapperService(DriverMixin):
         url = f"https://www.betexplorer.com/football/{self.bet_explorer_country}/{self.bet_explorer_league}{season_str}/results/"
         self.driver.get(url)
 
-        time.sleep(3)
+        time.sleep(5)
 
         try:
             if self.stage:

@@ -16,7 +16,7 @@ class FbrefScrapperService(DriverMixin):
         self.fbref_league = league
         self.games_stats_dict = {}
 
-    def get_teams_squad_id(self, home_td_index, tds):
+    def get_teams_squad_id(self, home_td_index, away_td_index, tds):
         if (
             len(
                 tds[home_td_index]
@@ -36,7 +36,7 @@ class FbrefScrapperService(DriverMixin):
             .split("/")[squad_id_index]
         )
         away_squad_id = (
-            tds[home_td_index + 4]
+            tds[away_td_index]
             .find_element(By.TAG_NAME, "a")
             .get_attribute("href")
             .split("/")[squad_id_index]
@@ -57,6 +57,34 @@ class FbrefScrapperService(DriverMixin):
         self.driver.get(url)
 
         fb = self.driver.find_element(By.CLASS_NAME, "fb")
+
+        head = fb.find_element(By.XPATH, "//table/thead/tr")
+        ths = head.find_elements(By.XPATH, ".//child::th")
+
+        home_xg, away_xg = None, None
+        date_idx, home_team_idx, score_idx, away_team_idx, home_xg_idx, away_xg_idx = (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+
+        for th_idx in range(len(ths)):
+            if ths[th_idx].text == "Date":
+                date_idx = th_idx - 1
+            elif ths[th_idx].text == "Home":
+                home_team_idx = th_idx - 1
+            elif ths[th_idx].text == "Score":
+                score_idx = th_idx - 1
+            elif ths[th_idx].text == "Away":
+                away_team_idx = th_idx - 1
+            elif ths[th_idx].get_attribute("data-stat") == "home_xg":
+                home_xg_idx = th_idx - 1
+            elif ths[th_idx].get_attribute("data-stat") == "away_xg":
+                away_xg_idx = th_idx - 1
+
         rows = fb.find_elements(By.XPATH, "//table/tbody/tr")
 
         total_games = 0
@@ -69,97 +97,32 @@ class FbrefScrapperService(DriverMixin):
             try:
                 tds = r.find_elements(By.XPATH, ".//child::td")
                 week = r.find_element(By.XPATH, ".//child::th").text
+
+                score = tds[score_idx].text
+                if not score:
+                    continue
+
+                date = tds[date_idx].text
+                home_team = tds[home_team_idx].text
+                away_team = tds[away_team_idx].text
+
+                if home_xg_idx is not None:
+                    home_xg = tds[home_xg_idx].text
+
+                if away_xg_idx is not None:
+                    away_xg = tds[away_xg_idx].text
+
+                if include_advanced_stats:
+                    home_squad_id, away_squad_id = self.get_teams_squad_id(
+                        home_team_idx, away_team_idx, tds
+                    )
+                    self.fbref_squad_ids.extend(
+                        [(home_squad_id, home_team), (away_squad_id, away_team)]
+                    )
+
+                home_score, away_score = score.split("–")
             except:
                 continue
-
-            if len(tds) == 11:
-                (
-                    _,
-                    date,
-                    _,
-                    home_team,
-                    score,
-                    away_team,
-                    _,
-                    _,
-                    _,
-                    _,
-                    _,
-                ) = [t.text for t in tds]
-                
-                home_xg, away_xg = None, None
-
-                if include_advanced_stats:
-                    home_squad_id, away_squad_id = self.get_teams_squad_id(2, tds)
-            elif len(tds) == 12:
-                (
-                    date,
-                    _,
-                    home_team,
-                    home_xg,
-                    score,
-                    away_xg,
-                    away_team,
-                    _,
-                    _,
-                    _,
-                    _,
-                    _,
-                ) = [t.text for t in tds]
-
-                if include_advanced_stats:
-                    home_squad_id, away_squad_id = self.get_teams_squad_id(2, tds)
-            elif len(tds) == 13:
-                (
-                    _,
-                    date,
-                    _,
-                    home_team,
-                    home_xg,
-                    score,
-                    away_xg,
-                    away_team,
-                    _,
-                    _,
-                    _,
-                    _,
-                    _,
-                ) = [t.text for t in tds]
-
-                if include_advanced_stats:
-                    home_squad_id, away_squad_id = self.get_teams_squad_id(3, tds)
-            elif len(tds) == 14:
-                (
-                    _,
-                    _,
-                    date,
-                    _,
-                    home_team,
-                    home_xg,
-                    score,
-                    away_xg,
-                    away_team,
-                    _,
-                    _,
-                    _,
-                    _,
-                    _,
-                ) = [t.text for t in tds]
-                
-                if include_advanced_stats:
-                    home_squad_id, away_squad_id = self.get_teams_squad_id(4, tds)
-            else:
-                continue
-
-            if not score:
-                continue
-
-            if include_advanced_stats:
-                self.fbref_squad_ids.extend(
-                    [(home_squad_id, home_team), (away_squad_id, away_team)]
-                )
-
-            home_score, away_score = score.split("–")
 
             try:
                 match_info = [
