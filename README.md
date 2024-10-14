@@ -11,11 +11,22 @@ DB_PASSWORD=pwd
 DB_DATABASE=football-data
 ```
 
-After that, just run the pip install command and run the main.py program!
-
+Run the pip install command in order to install the required packages.
 ```
 >> pip install -r requirements.txt
+```
+
+# Executing
+To execute the data scrapper just and run the main.py program
+
+```
 >> python ./src/main.py
+```
+
+Or if you want to run the scrapper just for the most recent season of multiple leagues, run the refresh_season_data.py program. There you can also choose which leagues are going to be processed.
+
+```
+>> python ./src/refresh_season_data.py
 ```
 
 ## Customize leagues
