@@ -12,7 +12,7 @@ class DriverMixin:
     def start_driver(self):
         # Set Chrome options (for example, to run headless if desired)
         chrome_options = Options()
-        chrome_options.headless = True  # Run headless if needed
+        chrome_options.add_argument('--headless=new')
         
         # Fetch the latest ChromeDriver version and start the driver
         service = Service(ChromeDriverManager().install())
