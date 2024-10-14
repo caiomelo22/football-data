@@ -3,6 +3,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from .stats_helper import selected_stats
 from ..mixins import DriverMixin
+from tqdm import tqdm
 
 
 class FbrefScrapperService(DriverMixin):
@@ -89,8 +90,9 @@ class FbrefScrapperService(DriverMixin):
 
         total_games = 0
 
-        for i, r in enumerate(rows):
-            print(f"{self.season} {i}/{len(rows)}")
+        print("Scrapping info from the fbref website:")
+        for i in tqdm(range(len(rows))):
+            r = rows[i]
             if not r.text:
                 continue
 

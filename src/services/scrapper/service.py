@@ -3,6 +3,7 @@ import pandas as pd
 from .bet_explorer import BetExplorerScrapperService
 from .fbref import FbrefScrapperService
 from thefuzz import fuzz
+from tqdm import tqdm
 
 
 class ScrapperService(FbrefScrapperService, BetExplorerScrapperService):
@@ -56,8 +57,10 @@ class ScrapperService(FbrefScrapperService, BetExplorerScrapperService):
         self.fbref_season["away_odds"] = None
         self.fbref_season["draw_odds"] = None
 
-        for i, row in self.fbref_season.iterrows():
-            print(f"{i}/{len(self.fbref_season)}")
+        print("Matching seasons data:")
+
+        for i in tqdm(range(len(self.fbref_season))):
+            row = self.fbref_season.iloc[i]
 
             try:
                 plus_one_day = odds_df["date"] + timedelta(days=1)

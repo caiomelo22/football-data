@@ -1,6 +1,7 @@
 import time
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 from selenium.webdriver.common.by import By
+from tqdm import tqdm
 
 from ..mixins import DriverMixin
 
@@ -51,8 +52,9 @@ class BetExplorerScrapperService(DriverMixin):
         rows = table.find_elements(By.XPATH, ".//tbody/tr")
 
         total_games = 0
-        for i, r in enumerate(rows):
-            print(f"{self.season} {i}/{len(rows)}")
+        print("Scrapping info from the betexplorer website:")
+        for i in tqdm(range(len(rows))):
+            r = rows[i]
             if not r.text:
                 continue
 
@@ -73,8 +75,15 @@ class BetExplorerScrapperService(DriverMixin):
                     continue
                 home_team, away_team = matchup.split(" - ")
 
-                if not date.split(".")[-1]:
-                    date += str(dt.now().year)
+                if date == "Today":
+                    date = dt.now()
+                    date = date.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%d.%m.%Y')
+                elif date == "Yesterday":
+                    date = dt.now() - timedelta(days=1)
+                    date = date.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%d.%m.%Y')
+                else:
+                    if not date.split(".")[-1]:
+                        date += str(dt.now().year)
 
                 match_info = [
                     self.transform_odds_date(date),
