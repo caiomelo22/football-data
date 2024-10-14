@@ -75,13 +75,27 @@ class MySQLService:
         try:
             columns = data_list[0].keys()
             values = [tuple(row.values()) for row in data_list]
-            query = f"INSERT IGNORE INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+            
+            if table_name == "matches":
+                # Assuming 'id' is the unique key for the 'matches' table
+                query = f"""
+                    INSERT INTO {table_name} ({', '.join(columns)})
+                    VALUES ({', '.join(['%s'] * len(columns))})
+                    ON DUPLICATE KEY UPDATE 
+                        home_odds = VALUES(home_odds),
+                        away_odds = VALUES(away_odds),
+                        draw_odds = VALUES(draw_odds)
+                """
+            else:
+                query = f"INSERT IGNORE INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+            
             self.cursor.executemany(query, values)
             self.conn.commit()
-            print("Multiple rows inserted successfully.")
+            print("Multiple rows inserted/updated successfully.")
         except mysql.connector.Error as e:
-            print(f"Error inserting multiple rows: {e}")
+            print(f"Error inserting/updating multiple rows: {e}")
             self.conn.rollback()
+
 
     def close(self):
         if self.conn and self.conn.is_connected():
