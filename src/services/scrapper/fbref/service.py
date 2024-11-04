@@ -1,3 +1,4 @@
+import re
 import time
 import pandas as pd
 from selenium.webdriver.common.by import By
@@ -43,6 +44,19 @@ class FbrefScrapperService(DriverMixin):
             .split("/")[squad_id_index]
         )
         return home_squad_id, away_squad_id
+
+    def parse_score(self, score_string):
+        # Pattern to match scores with optional penalty shootouts
+        match = re.match(r"(?:\(\d+\) )?(\d+)[–-](\d+)(?: \(\d+\))?", score_string)
+
+        if match:
+            # Extract the main scores
+            home_score = int(match.group(1))
+            away_score = int(match.group(2))
+
+            return home_score, away_score
+        else:
+            raise ValueError("Invalid score format")
 
     def fbref_scrapper(self, include_advanced_stats):
         self.fbref_season = []
@@ -104,6 +118,8 @@ class FbrefScrapperService(DriverMixin):
                 if not score:
                     continue
 
+                home_score, away_score = self.parse_score(score)
+
                 date = tds[date_idx].text
                 home_team = tds[home_team_idx].text
                 away_team = tds[away_team_idx].text
@@ -121,8 +137,6 @@ class FbrefScrapperService(DriverMixin):
                     self.fbref_squad_ids.extend(
                         [(home_squad_id, home_team), (away_squad_id, away_team)]
                     )
-
-                home_score, away_score = score.split("–")
             except:
                 continue
 
@@ -134,8 +148,8 @@ class FbrefScrapperService(DriverMixin):
                     week,
                     home_team,
                     float(home_xg) if home_xg is not None else None,
-                    int(home_score),
-                    int(away_score),
+                    home_score,
+                    away_score,
                     float(away_xg) if away_xg is not None else None,
                     away_team,
                 ]
