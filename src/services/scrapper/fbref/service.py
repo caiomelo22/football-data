@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 
 class FbrefScrapperService(DriverMixin):
-    def __init__(self, league, league_id, season, single_year_season):
+    def __init__(self, league, country, league_id, season, single_year_season):
         DriverMixin.__init__(
             self,
             season=season,
@@ -16,6 +16,7 @@ class FbrefScrapperService(DriverMixin):
         )
         self.fbref_league_id = league_id
         self.fbref_league = league
+        self.fbref_country = country
         self.games_stats_dict = {}
 
     def get_teams_squad_id(self, home_td_index, away_td_index, tds):
@@ -274,3 +275,5 @@ class FbrefScrapperService(DriverMixin):
         ]
 
         self.fbref_season = pd.DataFrame(complete_games)
+
+        self.fbref_season["league"] = f'{self.fbref_country}-{self.fbref_league}'

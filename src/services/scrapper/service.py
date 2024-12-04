@@ -20,6 +20,7 @@ class ScrapperService(FbrefScrapperService, BetExplorerScrapperService):
         FbrefScrapperService.__init__(
             self,
             be_league,
+            be_country,
             fbref_league_id,
             season,
             single_year_season,
