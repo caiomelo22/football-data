@@ -31,6 +31,8 @@ class BetExplorerScrapperService(DriverMixin):
             season_str = f"-{self.season}-{self.season+1}"
 
         url = f"https://www.betexplorer.com/football/{self.bet_explorer_country}/{self.bet_explorer_league}{season_str}/results/"
+        
+        print(url)
         self.driver.get(url)
 
         time.sleep(5)
