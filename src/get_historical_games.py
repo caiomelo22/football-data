@@ -8,16 +8,16 @@ load_dotenv()
 # General infos
 single_year_season = True
 include_advanced_stats = False
-create_matches_table = True
-start_season = 2018
-end_season = 2024
+create_matches_table = False
+start_season = 2025
+end_season = 2025
 
 # Fbref info
-fbref_league_id = 22
+fbref_league_id = 24
 
 # BetExplorer info
-bet_explorer_league = "mls"
-bet_explorer_country = "usa"
+bet_explorer_league = "serie-a-betano"
+bet_explorer_country = "brazil"
 bet_explorer_stage = "Main"
 bet_explorer_hide_last_season_str = True
 
@@ -54,6 +54,7 @@ for season in range(start_season, end_season + 1):
         mysql_service.create_table_from_df("matches", scrapper_service.fbref_season)
 
     data_list = scrapper_service.fbref_season.to_dict(orient="records")
+
     mysql_service.insert_multiple_rows("matches", data_list)
         
     mysql_service.close()
