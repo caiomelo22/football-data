@@ -1,4 +1,16 @@
 selected_stats = {
+    'stats': [
+        'MP',
+        'Starts',
+        'Min',
+        'Gls',
+        'Ast',
+        'PK',
+        'PKatt',
+        'CrdY',
+        'CrdR',
+        'xG'
+    ],
     'shooting': [
         'Sh',
         'SoT',
@@ -28,9 +40,27 @@ selected_stats = {
         'Succ',
         'Succ%'
     ],
+    'defense': [
+        'Tkl',
+        'TklW',
+    ],
     'misc': [
-        'CrdY',
-        'CrdR',
+        'Fls',
+        'Fld',
+        'Off',
+        'PKwon',
+        'PKcon',
+        'OG',
         'Recov',
+    ],
+    'keepers': [
+        'SoTA',
+        'Saves',
+        'Save%',
+        'CS',
+        'PKatt',
+        'PKA',
+        'PKsv',
+        'PKm'
     ]
 }
