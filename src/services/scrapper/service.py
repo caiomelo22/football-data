@@ -12,9 +12,9 @@ class ScrapperService(FbrefScrapperService, BetExplorerScrapperService):
         season,
         single_year_season,
         fbref_league_id,
-        be_stage,
-        be_country,
-        be_league,
+        be_stage = None,
+        be_country = None,
+        be_league = None,
     ):
         # Call the constructors of parent classes explicitly
         FbrefScrapperService.__init__(

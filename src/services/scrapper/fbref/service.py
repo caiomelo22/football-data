@@ -277,3 +277,130 @@ class FbrefScrapperService(DriverMixin):
         self.fbref_season = pd.DataFrame(complete_games)
 
         self.fbref_season["league"] = f'{self.fbref_country}-{self.fbref_league}'
+
+    def get_teams_overall_rows(self, tables, sub_stats):
+        teams_overall_table = tables[0]
+
+        head = teams_overall_table.find_elements(By.TAG_NAME, "tr")[1]
+        ths = head.find_elements(By.TAG_NAME, "th")
+
+        ths_dict = {th.text: th for th in ths}
+
+        sub_stats_indexes = dict()
+
+        ths_keys = list(ths_dict.keys())
+
+        for sub_stat in sub_stats:
+            for i in range(len(ths_keys)):
+                if ths_keys[i] == sub_stat:
+                    sub_stats_indexes[sub_stat] = i
+                    break
+
+        rows = teams_overall_table.find_elements(By.TAG_NAME, "tr")
+
+        teams_info = list()
+
+        for i in tqdm(range(len(rows))):
+            r = rows[i]
+            if not r.text:
+                continue
+
+            try:
+                tds = r.find_elements(By.TAG_NAME, "td")
+                th = r.find_element(By.TAG_NAME, "th")
+
+                if len(tds) < len(sub_stats_indexes):
+                    continue
+
+                team_info = [
+                    th.text # Team
+                ]
+
+                for sub_stat_index in sub_stats_indexes.values():
+                    team_info.append(tds[sub_stat_index-1].text)
+
+            except:
+                continue
+
+            teams_info.append(team_info)
+
+        return teams_info
+
+    def get_players_overall_rows(self, tables, sub_stats):
+        players_overall_table = tables[2]
+
+        head = players_overall_table.find_elements(By.TAG_NAME, "tr")[1]
+        ths = head.find_elements(By.TAG_NAME, "th")
+
+        ths_dict = {th.text: th for th in ths}
+
+        sub_stats_indexes = dict()
+
+        ths_keys = list(ths_dict.keys())
+
+        for sub_stat in sub_stats:
+            for i in range(len(ths_keys)):
+                if ths_keys[i] == sub_stat:
+                    sub_stats_indexes[sub_stat] = i
+                    break
+
+        rows = players_overall_table.find_elements(By.TAG_NAME, "tr")
+
+        players_info = list()
+
+        for i in tqdm(range(len(rows))):
+            r = rows[i]
+            if not r.text:
+                continue
+
+            try:
+                tds = r.find_elements(By.TAG_NAME, "td")
+
+                if len(tds) < len(sub_stats_indexes):
+                    continue
+
+                player_info = [
+                    tds[0].text, # Name
+                    tds[1].text, # Nation
+                    tds[2].text, # Position
+                    tds[3].text, # Team
+                    tds[4].text, # Age
+                    tds[5].text, # 90s played
+                ]
+
+                for sub_stat, sub_stat_index in sub_stats_indexes.items():
+                    player_info.append(tds[sub_stat_index-1].text)
+
+            except:
+                continue
+
+            players_info.append(player_info)
+
+        return players_info
+
+    def fbref_overall_scrapper(self):
+            season_str = (
+                str(self.season)
+                if self.single_year_season
+                else f"{self.season}-{self.season+1}"
+            )
+
+            teams_overall_info = dict()
+            players_overall_info = dict()
+
+            for stat, sub_stats in selected_stats.items():
+                url = f"https://fbref.com/en/comps/{self.fbref_league_id}/{season_str}/{stat}/Stats"
+
+                self.driver.get(url)
+
+                fb = self.driver.find_element(By.CLASS_NAME, "fb")
+
+                tables = fb.find_elements(By.CLASS_NAME, "stats_table")
+
+                teams_stats_overall_info = self.get_teams_overall_rows(tables, sub_stats)
+                players_stats_overall_info = self.get_players_overall_rows(tables, sub_stats)
+
+                teams_overall_info[stat] = teams_stats_overall_info
+                players_overall_info[stat] = players_stats_overall_info
+
+            return teams_overall_info, players_overall_info
