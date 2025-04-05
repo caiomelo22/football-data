@@ -1,6 +1,7 @@
 import re
 import time
 import pandas as pd
+import numpy as np
 from selenium.webdriver.common.by import By
 from .stats_helper import selected_stats
 from ..mixins import DriverMixin
@@ -278,7 +279,11 @@ class FbrefScrapperService(DriverMixin):
 
         self.fbref_season["league"] = f'{self.fbref_country}-{self.fbref_league}'
 
-    def get_teams_overall_rows(self, tables, sub_stats):
+    def clean_sub_stat_str(self, stat, sub_stat):
+        sub_stat_cleaned = sub_stat.replace('-', '_').replace(':', '_').replace('/', '_').replace('%', 'Pct')
+        return f"{stat.capitalize()}_{sub_stat_cleaned}"
+
+    def get_teams_overall_rows(self, tables, season, stat, sub_stats):
         teams_overall_table = tables[0]
 
         head = teams_overall_table.find_elements(By.TAG_NAME, "tr")[1]
@@ -313,6 +318,7 @@ class FbrefScrapperService(DriverMixin):
                     continue
 
                 team_info = [
+                    season,
                     th.text # Team
                 ]
 
@@ -324,9 +330,15 @@ class FbrefScrapperService(DriverMixin):
 
             teams_info.append(team_info)
 
-        return teams_info
+        index_columns = ["Season", "Team"]
+        stats_columns = [self.clean_sub_stat_str(stat, s) for s in sub_stats]
 
-    def get_players_overall_rows(self, tables, sub_stats):
+        df = pd.DataFrame(teams_info, columns=index_columns + stats_columns)
+        df.set_index(index_columns, inplace=True)
+
+        return df
+
+    def get_players_overall_rows(self, tables, season, stat, sub_stats):
         players_overall_table = tables[2]
 
         head = players_overall_table.find_elements(By.TAG_NAME, "tr")[1]
@@ -360,12 +372,12 @@ class FbrefScrapperService(DriverMixin):
                     continue
 
                 player_info = [
+                    season,
                     tds[0].text, # Name
-                    tds[1].text, # Nation
+                    tds[1].text.split(' ')[-1], # Nation
                     tds[2].text, # Position
                     tds[3].text, # Team
-                    tds[4].text, # Age
-                    tds[5].text, # 90s played
+                    tds[4].text.split('-')[0], # Age
                 ]
 
                 for sub_stat, sub_stat_index in sub_stats_indexes.items():
@@ -376,7 +388,13 @@ class FbrefScrapperService(DriverMixin):
 
             players_info.append(player_info)
 
-        return players_info
+        index_columns = ["Season", "Name", "Nation", "Position", "Team", "Age"]
+        stats_columns = [self.clean_sub_stat_str(stat, s) for s in sub_stats]
+
+        df = pd.DataFrame(players_info, columns=index_columns + stats_columns)
+        df.set_index(index_columns, inplace=True)
+
+        return df
 
     def fbref_overall_scrapper(self):
             season_str = (
@@ -385,10 +403,12 @@ class FbrefScrapperService(DriverMixin):
                 else f"{self.season}-{self.season+1}"
             )
 
-            teams_overall_info = dict()
-            players_overall_info = dict()
+            teams_overall_info = None
+            players_overall_info = None
 
             for stat, sub_stats in selected_stats.items():
+                print(f"Scrapping {stat} data...")
+
                 url = f"https://fbref.com/en/comps/{self.fbref_league_id}/{season_str}/{stat}/Stats"
 
                 self.driver.get(url)
@@ -397,10 +417,20 @@ class FbrefScrapperService(DriverMixin):
 
                 tables = fb.find_elements(By.CLASS_NAME, "stats_table")
 
-                teams_stats_overall_info = self.get_teams_overall_rows(tables, sub_stats)
-                players_stats_overall_info = self.get_players_overall_rows(tables, sub_stats)
+                teams_stats_overall_info = self.get_teams_overall_rows(tables, season_str, stat, sub_stats)
+                players_stats_overall_info = self.get_players_overall_rows(tables, season_str, stat, sub_stats)
 
-                teams_overall_info[stat] = teams_stats_overall_info
-                players_overall_info[stat] = players_stats_overall_info
+                if teams_overall_info is None:
+                    teams_overall_info = teams_stats_overall_info
+                    players_overall_info = players_stats_overall_info
+                else:
+                    teams_overall_info = pd.concat([teams_overall_info, teams_stats_overall_info], axis=1)
+                    players_overall_info = pd.concat([players_overall_info, players_stats_overall_info], axis=1)
+
+            players_overall_info.reset_index(drop=False, inplace=True)
+            teams_overall_info.reset_index(drop=False, inplace=True)
+
+            players_overall_info = players_overall_info.replace({np.nan: None})
+            teams_overall_info = teams_overall_info.replace({np.nan: None})
 
             return teams_overall_info, players_overall_info

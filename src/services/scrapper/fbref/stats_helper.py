@@ -3,6 +3,7 @@ selected_stats = {
         'MP',
         'Starts',
         'Min',
+        '90s',
         'Gls',
         'Ast',
         'PK',
@@ -35,7 +36,6 @@ selected_stats = {
         'SCA'
     ],
     'possession': [
-        'Poss',
         'Att',
         'Succ',
         'Succ%'
