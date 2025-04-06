@@ -323,7 +323,8 @@ class FbrefScrapperService(DriverMixin):
                 ]
 
                 for sub_stat_index in sub_stats_indexes.values():
-                    team_info.append(tds[sub_stat_index-1].text)
+                    sub_stat_value = tds[sub_stat_index-1].text or None
+                    team_info.append(sub_stat_value)
 
             except:
                 continue
@@ -381,7 +382,8 @@ class FbrefScrapperService(DriverMixin):
                 ]
 
                 for sub_stat, sub_stat_index in sub_stats_indexes.items():
-                    player_info.append(tds[sub_stat_index-1].text)
+                    sub_stat_value = tds[sub_stat_index-1].text or None
+                    player_info.append(sub_stat_value)
 
             except:
                 continue
@@ -395,6 +397,24 @@ class FbrefScrapperService(DriverMixin):
         df.set_index(index_columns, inplace=True)
 
         return df
+    
+    def clean_df(self, df: pd.DataFrame):
+        for col in df.columns:
+            # Standardize nulls to proper NA values
+            df[col].replace(['', 'None', 'none', 'NaN', 'nan', None], pd.NA, inplace=True)
+
+            # Try converting to numeric (non-destructive check)
+            converted = pd.to_numeric(df[col], errors='ignore')
+
+            if col == 'Age':
+                print(converted)
+                print(df[col].notna().sum(), converted.notna().sum())
+
+            # If all non-null values were successfully converted, update column
+            if df[col].notna().sum() == converted.notna().sum():
+                df[col] = converted
+
+        df.reset_index(drop=False, inplace=True)
 
     def fbref_overall_scrapper(self):
             season_str = (
@@ -427,10 +447,7 @@ class FbrefScrapperService(DriverMixin):
                     teams_overall_info = pd.concat([teams_overall_info, teams_stats_overall_info], axis=1)
                     players_overall_info = pd.concat([players_overall_info, players_stats_overall_info], axis=1)
 
-            players_overall_info.reset_index(drop=False, inplace=True)
-            teams_overall_info.reset_index(drop=False, inplace=True)
-
-            players_overall_info = players_overall_info.replace({np.nan: None})
-            teams_overall_info = teams_overall_info.replace({np.nan: None})
+            self.clean_df(teams_overall_info)
+            self.clean_df(players_overall_info)
 
             return teams_overall_info, players_overall_info

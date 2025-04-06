@@ -1,3 +1,4 @@
+import math
 import os
 import numpy as np
 import mysql.connector
@@ -71,8 +72,25 @@ class MySQLService:
             print(f"Error inserting data: {e}")
             self.conn.rollback()
 
+    def convert_nans_to_none(self, data_list):
+        clean_list = []
+
+        for row in data_list:
+            clean_row = {}
+            
+            for k, v in row.items():
+                if isinstance(v, float) and math.isnan(v):
+                    clean_row[k] = None
+                else:
+                    clean_row[k] = v
+
+            clean_list.append(clean_row)
+
+        return clean_list
+
     def insert_multiple_rows(self, table_name, data_list):
         try:
+            data_list = self.convert_nans_to_none(data_list)
             columns = data_list[0].keys()
             values = [tuple(row.values()) for row in data_list]
             
