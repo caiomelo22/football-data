@@ -31,9 +31,12 @@ for season in range(start_season, end_season + 1):
 
     mysql_service = MySQLService()
 
+    teams_pk = ["Team", "Season"]
+    players_pk = ["Season", "Name", "Team"]
+
     if create_matches_table and season == start_season:
-        mysql_service.create_table_from_df("overall_teams", teams_overall_info)
-        mysql_service.create_table_from_df("overall_players", players_overall_info)
+        mysql_service.create_table_from_df("overall_teams", teams_overall_info, teams_pk)
+        mysql_service.create_table_from_df("overall_players", players_overall_info, players_pk)
 
     teams_overall_data_list = teams_overall_info.to_dict(orient="records")
     players_overall_data_list = players_overall_info.to_dict(orient="records")

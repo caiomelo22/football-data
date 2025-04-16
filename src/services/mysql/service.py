@@ -28,9 +28,9 @@ class MySQLService:
             print(f"Error connecting to MySQL database: {e}")
             raise
 
-    def create_table(self, table_name, columns):
+    def create_table(self, table_name, columns, primary_key = ""):
         try:
-            query = f"CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(columns)})"
+            query = f"CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(columns)} {primary_key})"
             self.cursor.execute(query)
             self.conn.commit()
             print(f"Table '{table_name}' created successfully.")
@@ -38,7 +38,7 @@ class MySQLService:
             print(f"Error creating table: {e}")
             self.conn.rollback()
 
-    def create_table_from_df(self, table_name, df):
+    def create_table_from_df(self, table_name, df, pk_columns = []):
         try:
             columns = []
 
@@ -55,8 +55,12 @@ class MySQLService:
                 col_type = type_mapping.get(str(dtype), "VARCHAR(255)")
                 columns.append(f"{col} {col_type}")
 
+            primary_key = ""
+            if pk_columns:
+                primary_key = f", PRIMARY KEY ({','.join(pk_columns)})"
+
             # Create the table
-            self.create_table(table_name=table_name, columns=columns)
+            self.create_table(table_name=table_name, columns=columns, primary_key=primary_key)
         except Exception as e:
             print(f"Error creating table: {e}")
 
