@@ -17,20 +17,26 @@ Run the pip install command in order to install the required packages.
 ```
 
 # Executing
-To execute the data scrapper just and run the main.py program
+To execute the data scrapper to fetch historical games, just and run the [Get Historical Games](https://github.com/caiomelo22/football-data/blob/main/src/get_historical_games.py).
 
 ```
->> python ./src/main.py
+>> python ./src/get_historical_games.py.py
 ```
 
-Or if you want to run the scrapper just for the most recent season of multiple leagues, run the refresh_season_data.py program. There you can also choose which leagues are going to be processed.
+Or if you want to run the scrapper just for the most recent season of multiple leagues, run the [Refresh Season Games](https://github.com/caiomelo22/football-data/blob/main/src/refresh_season_games.py). There you can also choose which leagues are going to be processed.
 
 ```
->> python ./src/refresh_season_data.py
+>> python ./src/refresh_season_games.py
+```
+
+Now we have a new program to fetch overall stats for each team and players of a specific league. To fetch this data, just run the [Get Overall Info](https://github.com/caiomelo22/football-data/blob/main/src/get_overall_info.py).
+
+```
+>> python ./src/get_overall_info.py
 ```
 
 ## Customize leagues
-If you want to scrape matches from different leagues, just clone the project and mess around with the `main.py` global parameters. They're set based on the URI information from the sites mentioned before.
+If you want to scrape matches from different leagues, just clone the project and mess around with the different programs' global parameters. They're set based on the URI information from the sites mentioned before.
 
 # Disclaimer
 This project was made for educational purposes only. The data gathered with this project was used for private projects only, of which are not used to sell it in any way.
