@@ -28,7 +28,7 @@ class MySQLService:
             print(f"Error connecting to MySQL database: {e}")
             raise
 
-    def create_table(self, table_name, columns, primary_key = ""):
+    def create_table(self, table_name, columns, primary_key=""):
         try:
             query = f"CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(columns)} {primary_key})"
             self.cursor.execute(query)
@@ -38,7 +38,7 @@ class MySQLService:
             print(f"Error creating table: {e}")
             self.conn.rollback()
 
-    def create_table_from_df(self, table_name, df, pk_columns = []):
+    def create_table_from_df(self, table_name, df, pk_columns=[]):
         try:
             columns = []
 
@@ -60,7 +60,9 @@ class MySQLService:
                 primary_key = f", PRIMARY KEY ({','.join(pk_columns)})"
 
             # Create the table
-            self.create_table(table_name=table_name, columns=columns, primary_key=primary_key)
+            self.create_table(
+                table_name=table_name, columns=columns, primary_key=primary_key
+            )
         except Exception as e:
             print(f"Error creating table: {e}")
 
@@ -81,7 +83,7 @@ class MySQLService:
 
         for row in data_list:
             clean_row = {}
-            
+
             for k, v in row.items():
                 if isinstance(v, float) and math.isnan(v):
                     clean_row[k] = None
@@ -92,12 +94,12 @@ class MySQLService:
 
         return clean_list
 
-    def insert_multiple_rows(self, table_name, data_list):
+    def insert_multiple_rows(self, table_name, data_list, primary_keys=None):
         try:
             data_list = self.convert_nans_to_none(data_list)
             columns = data_list[0].keys()
             values = [tuple(row.values()) for row in data_list]
-            
+
             if table_name == "matches":
                 # Assuming 'id' is the unique key for the 'matches' table
                 query = f"""
@@ -108,16 +110,31 @@ class MySQLService:
                         away_odds = VALUES(away_odds),
                         draw_odds = VALUES(draw_odds)
                 """
+            elif "overall" in table_name:
+                if not primary_keys:
+                    raise ValueError(
+                        "Primary key columns must be provided for 'overall' tables."
+                    )
+
+                update_columns = [col for col in columns if col not in primary_keys]
+                update_clause = ", ".join(
+                    [f"{col} = VALUES({col})" for col in update_columns]
+                )
+
+                query = f"""
+                    INSERT INTO {table_name} ({', '.join(columns)})
+                    VALUES ({', '.join(['%s'] * len(columns))})
+                    ON DUPLICATE KEY UPDATE {update_clause}
+                """
             else:
                 query = f"INSERT IGNORE INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
-            
+
             self.cursor.executemany(query, values)
             self.conn.commit()
             print("Multiple rows inserted/updated successfully.")
         except mysql.connector.Error as e:
             print(f"Error inserting/updating multiple rows: {e}")
             self.conn.rollback()
-
 
     def close(self):
         if self.conn and self.conn.is_connected():
