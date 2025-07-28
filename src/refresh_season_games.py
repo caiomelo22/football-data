@@ -69,7 +69,9 @@ leagues_to_refresh = [
 
 for league in leagues_to_refresh:
     print("=" * 50)
-    print(f"\nBegan processing league {league['bet_explorer_country']} - {league['bet_explorer_league']}")
+    print(
+        f"\nBegan processing league {league['bet_explorer_country']} - {league['bet_explorer_league']}"
+    )
     scrapper_service = ScrapperService(
         season=season,
         single_year_season=league["single_year_season"],
@@ -84,7 +86,7 @@ for league in leagues_to_refresh:
 
     if league["include_advanced_stats"]:
         scrapper_service.fbref_advanced_stats_scrapper()
-    
+
     scrapper_service.combine_fbref_stats()
 
     scrapper_service.bet_explorer_scrapper(hide_last_season_str=True)
@@ -97,5 +99,5 @@ for league in leagues_to_refresh:
 
     data_list = scrapper_service.fbref_season.to_dict(orient="records")
     mysql_service.insert_multiple_rows("matches", data_list)
-        
+
     mysql_service.close()

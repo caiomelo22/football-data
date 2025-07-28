@@ -3,8 +3,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
+
 class DriverMixin:
-    def __init__(self, season, single_year_season):
+    def __init__(self, season=None, single_year_season=None):
         self.season = season
         self.single_year_season = single_year_season
         self.driver = None
@@ -12,8 +13,8 @@ class DriverMixin:
     def start_driver(self):
         # Set Chrome options (for example, to run headless if desired)
         chrome_options = Options()
-        chrome_options.add_argument('--headless=new')
-        
+        # chrome_options.add_argument('--headless=new')
+
         # Fetch the latest ChromeDriver version and start the driver
         service = Service(ChromeDriverManager().install())
 

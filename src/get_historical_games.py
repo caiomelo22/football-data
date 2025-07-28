@@ -36,7 +36,7 @@ for season in range(start_season, end_season + 1):
 
     if include_advanced_stats:
         scrapper_service.fbref_advanced_stats_scrapper()
-    
+
     scrapper_service.combine_fbref_stats()
 
     if bet_explorer_hide_last_season_str and season == end_season:
@@ -56,5 +56,5 @@ for season in range(start_season, end_season + 1):
     data_list = scrapper_service.fbref_season.to_dict(orient="records")
 
     mysql_service.insert_multiple_rows("matches", data_list)
-        
+
     mysql_service.close()

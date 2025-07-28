@@ -31,7 +31,7 @@ class BetExplorerScrapperService(DriverMixin):
             season_str = f"-{self.season}-{self.season+1}"
 
         url = f"https://www.betexplorer.com/football/{self.bet_explorer_country}/{self.bet_explorer_league}{season_str}/results/"
-        
+
         print(url)
         self.driver.get(url)
 
@@ -79,10 +79,14 @@ class BetExplorerScrapperService(DriverMixin):
 
                 if date == "Today":
                     date = dt.now()
-                    date = date.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%d.%m.%Y')
+                    date = date.replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    ).strftime("%d.%m.%Y")
                 elif date == "Yesterday":
                     date = dt.now() - timedelta(days=1)
-                    date = date.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%d.%m.%Y')
+                    date = date.replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    ).strftime("%d.%m.%Y")
                 else:
                     if not date.split(".")[-1]:
                         date += str(dt.now().year)
