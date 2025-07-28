@@ -94,6 +94,60 @@ class MySQLService:
 
         return clean_list
 
+    def get_insert_matches_query(self, table_name, columns):
+        # Assuming 'id' is the unique key for the 'matches' table
+        query = f"""
+            INSERT INTO {table_name} ({', '.join(columns)})
+            VALUES ({', '.join(['%s'] * len(columns))})
+            ON DUPLICATE KEY UPDATE 
+                home_odds = VALUES(home_odds),
+                away_odds = VALUES(away_odds),
+                draw_odds = VALUES(draw_odds)
+        """
+
+        return query
+
+    def get_insert_nowgoal_matches_query(self, table_name, columns):
+        # Assuming 'id' is the unique key for the 'matches' table
+        query = f"""
+            INSERT INTO {table_name} ({', '.join(columns)})
+            VALUES ({', '.join(['%s'] * len(columns))})
+            ON DUPLICATE KEY UPDATE 
+                home_odds = VALUES(home_odds),
+                away_odds = VALUES(away_odds),
+                draw_odds = VALUES(draw_odds),
+                home_ahc_odds = VALUES(home_ahc_odds),
+                away_ahc_odds = VALUES(away_ahc_odds),
+                ahc_line = VALUES(ahc_line),
+                overs_odds = VALUES(overs_odds),
+                unders_odds = VALUES(unders_odds),
+                totals_line = VALUES(totals_line)
+        """
+
+        return query
+
+    def get_insert_overall_query(self, table_name, columns, primary_keys):
+        if not primary_keys:
+            raise ValueError(
+                "Primary key columns must be provided for 'overall' tables."
+            )
+
+        update_columns = [col for col in columns if col not in primary_keys]
+        update_clause = ", ".join([f"{col} = VALUES({col})" for col in update_columns])
+
+        query = f"""
+            INSERT INTO {table_name} ({', '.join(columns)})
+            VALUES ({', '.join(['%s'] * len(columns))})
+            ON DUPLICATE KEY UPDATE {update_clause}
+        """
+
+        return query
+
+    def get_default_insert_query(self, table_name, columns):
+        query = f"INSERT IGNORE INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+
+        return query
+
     def insert_multiple_rows(self, table_name, data_list, primary_keys=None):
         try:
             data_list = self.convert_nans_to_none(data_list)
@@ -101,33 +155,13 @@ class MySQLService:
             values = [tuple(row.values()) for row in data_list]
 
             if table_name == "matches":
-                # Assuming 'id' is the unique key for the 'matches' table
-                query = f"""
-                    INSERT INTO {table_name} ({', '.join(columns)})
-                    VALUES ({', '.join(['%s'] * len(columns))})
-                    ON DUPLICATE KEY UPDATE 
-                        home_odds = VALUES(home_odds),
-                        away_odds = VALUES(away_odds),
-                        draw_odds = VALUES(draw_odds)
-                """
+                query = self.get_insert_matches_query(table_name, columns)
+            elif "nowgoal_matches" in table_name:
+                query = self.get_insert_nowgoal_matches_query(table_name, columns)
             elif "overall" in table_name:
-                if not primary_keys:
-                    raise ValueError(
-                        "Primary key columns must be provided for 'overall' tables."
-                    )
-
-                update_columns = [col for col in columns if col not in primary_keys]
-                update_clause = ", ".join(
-                    [f"{col} = VALUES({col})" for col in update_columns]
-                )
-
-                query = f"""
-                    INSERT INTO {table_name} ({', '.join(columns)})
-                    VALUES ({', '.join(['%s'] * len(columns))})
-                    ON DUPLICATE KEY UPDATE {update_clause}
-                """
+                query = self.get_insert_overall_query(table_name, columns, primary_keys)
             else:
-                query = f"INSERT IGNORE INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+                query = self.get_default_insert_query(table_name, columns)
 
             self.cursor.executemany(query, values)
             self.conn.commit()
