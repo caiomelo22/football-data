@@ -47,11 +47,11 @@ class NowGoalScrapperService(DriverMixin):
         return market_cols_formatted
 
     def clean_team_name(self, team: WebElement):
-        team_text = team.text
+        a_tag = team.find_element(By.TAG_NAME, "a")
 
-        end_index = team_text.index("[")
+        team_text = a_tag.text
 
-        return team_text[:end_index]
+        return team_text
 
     def get_match_score(self, score: WebElement):
         score_text = score.text
