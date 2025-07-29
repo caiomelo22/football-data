@@ -1,8 +1,9 @@
 import numpy as np
-from services import ScrapperService, MySQLService
+from services import MySQLService, FbrefScrapperService
 from dotenv import load_dotenv
 
 from utils.file import save_json
+from utils.helper_functions import get_season_str
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -16,12 +17,17 @@ end_season = 2025
 
 # Fbref info
 fbref_league_id = 24
+country = "brazil"
+league = "serie-a"
 
 for season in range(start_season, end_season + 1):
-    scrapper_service = ScrapperService(
-        season=season,
-        single_year_season=single_year_season,
+    season_str = get_season_str(single_year_season, season)
+
+    scrapper_service = FbrefScrapperService(
+        season_str=season_str,
         fbref_league_id=fbref_league_id,
+        country=country,
+        league=league,
     )
 
     scrapper_service.start_driver()
@@ -31,8 +37,8 @@ for season in range(start_season, end_season + 1):
 
     mysql_service = MySQLService()
 
-    teams_pk = ["Team", "Season"]
-    players_pk = ["Season", "Name", "Team"]
+    teams_pk = ["Team", "Season", "League"]
+    players_pk = ["Season", "Name", "Team", "League"]
 
     if create_matches_table and season == start_season:
         mysql_service.create_table_from_df(

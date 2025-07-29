@@ -1,26 +1,36 @@
 import re
 import time
 import pandas as pd
-import numpy as np
+import typing as t
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 from .stats_helper import selected_stats
 from ..mixins import DriverMixin
 from tqdm import tqdm
 
 
 class FbrefScrapperService(DriverMixin):
-    def __init__(self, league, country, league_id, season, single_year_season):
+    def __init__(
+        self,
+        season_str: str,
+        fbref_league_id: str,
+        country: str = None,
+        league: str = None,
+        include_advanced_stats: bool = False,
+    ):
         DriverMixin.__init__(
             self,
-            season=season,
-            single_year_season=single_year_season,
         )
-        self.fbref_league_id = league_id
-        self.fbref_league = league
-        self.fbref_country = country
-        self.games_stats_dict = {}
 
-    def get_teams_squad_id(self, home_td_index, away_td_index, tds):
+        self.season_str = season_str
+        self.country = country
+        self.league = league
+        self.league_id = fbref_league_id
+        self.include_advanced_stats = include_advanced_stats
+
+    def get_teams_squad_id(
+        self, home_td_index: int, away_td_index: int, tds: t.List[WebElement]
+    ) -> t.Tuple[str, str]:
         if (
             len(
                 tds[home_td_index]
@@ -47,7 +57,7 @@ class FbrefScrapperService(DriverMixin):
         )
         return home_squad_id, away_squad_id
 
-    def parse_score(self, score_string):
+    def parse_score(self, score_string: str) -> t.Tuple[int, int]:
         # Pattern to match scores with optional penalty shootouts
         match = re.match(r"(?:\(\d+\) )?(\d+)[–-](\d+)(?: \(\d+\))?", score_string)
 
@@ -60,17 +70,11 @@ class FbrefScrapperService(DriverMixin):
         else:
             raise ValueError("Invalid score format")
 
-    def fbref_scrapper(self, include_advanced_stats):
+    def fbref_scrapper(self) -> None:
         self.fbref_season = []
         self.fbref_squad_ids = []
 
-        season_str = (
-            str(self.season)
-            if self.single_year_season
-            else f"{self.season}-{self.season+1}"
-        )
-
-        url = f"https://fbref.com/en/comps/{self.fbref_league_id}/{season_str}/schedule/Scores-and-Fixtures"
+        url = f"https://fbref.com/en/comps/{self.league_id}/{self.season_str}/schedule/Scores-and-Fixtures"
         self.driver.get(url)
 
         fb = self.driver.find_element(By.CLASS_NAME, "fb")
@@ -132,7 +136,7 @@ class FbrefScrapperService(DriverMixin):
                 if away_xg_idx is not None:
                     away_xg = tds[away_xg_idx].text
 
-                if include_advanced_stats:
+                if self.include_advanced_stats:
                     home_squad_id, away_squad_id = self.get_teams_squad_id(
                         home_team_idx, away_team_idx, tds
                     )
@@ -145,7 +149,6 @@ class FbrefScrapperService(DriverMixin):
             try:
                 match_info = [
                     self.season,
-                    self.fbref_league.lower(),
                     date,
                     week,
                     home_team,
@@ -161,14 +164,23 @@ class FbrefScrapperService(DriverMixin):
             self.fbref_season.append(match_info)
             total_games += 1
 
-        if include_advanced_stats:
+        if self.include_advanced_stats:
             self.fbref_squad_ids = set(self.fbref_squad_ids)
 
-    def get_value(self, attr, tds, cols):
+    def get_value(self, attr: str, tds: t.List[WebElement], cols: str) -> str:
         col_index = cols.index(attr)
         return tds[col_index - 1].text
 
-    def save_game_stats(self, team, opp_team, date, venue, stats, cols, games_dict):
+    def save_game_stats(
+        self,
+        team: str,
+        opp_team: str,
+        date: str,
+        venue: str,
+        stats: t.List[float],
+        cols: t.List[str],
+        games_dict: t.Dict[t.Any],
+    ) -> None:
         if venue == "Home":
             home_team, away_team = team, opp_team
             prefixed_cols = ["home_" + col for col in cols]
@@ -183,7 +195,7 @@ class FbrefScrapperService(DriverMixin):
         else:
             games_dict[game_key] = stats_dict
 
-    def fbref_advanced_stats_scrapper(self):
+    def fbref_advanced_stats_scrapper(self) -> None:
         self.games_stats_dict = {}
 
         for squad_idx, si in enumerate(self.fbref_squad_ids):
@@ -193,13 +205,8 @@ class FbrefScrapperService(DriverMixin):
                 print(
                     f"{self.season} {squad_idx}/{len(self.fbref_squad_ids)} --> {team_name}:{stat_type}"
                 )
-                season_str = (
-                    str(self.season)
-                    if self.single_year_season
-                    else f"{self.season}-{self.season+1}"
-                )
 
-                url = f"https://fbref.com/en/squads/{squad_id}/{season_str}/matchlogs/c{self.fbref_league_id}/{stat_type}"
+                url = f"https://fbref.com/en/squads/{squad_id}/{self.season_str}/matchlogs/c{self.league_id}/{stat_type}"
                 self.driver.get(url)
 
                 try:
@@ -244,7 +251,7 @@ class FbrefScrapperService(DriverMixin):
 
                 time.sleep(6)
 
-    def complete_stats(self, game_stats, reg_cols):
+    def complete_stats(self, game_stats: dict, reg_cols: t.List[str]) -> dict:
         reg_dict = {col: stat for col, stat in zip(reg_cols, game_stats)}
         game_key = (reg_dict["home_team"], reg_dict["away_team"], reg_dict["date"])
 
@@ -254,14 +261,17 @@ class FbrefScrapperService(DriverMixin):
             advanced_stats_dict = dict()
 
         game_dict = {**reg_dict, **advanced_stats_dict}
+
         return game_dict
 
-    def combine_fbref_stats(self):
+    def get_league_str(self) -> str:
+        return f"{self.country}-{self.league}"
+
+    def combine_fbref_stats(self) -> None:
         print(f"Total games in the {self.season} season:", len(self.fbref_season))
 
         columns = [
             "season",
-            "league",
             "date",
             "week",
             "home_team",
@@ -277,9 +287,9 @@ class FbrefScrapperService(DriverMixin):
 
         self.fbref_season = pd.DataFrame(complete_games)
 
-        self.fbref_season["league"] = f"{self.fbref_country}-{self.fbref_league}"
+        self.fbref_season["league"] = self.get_league_str()
 
-    def clean_sub_stat_str(self, stat, sub_stat):
+    def clean_sub_stat_str(self, stat: str, sub_stat: str) -> str:
         sub_stat_cleaned = (
             sub_stat.replace("-", "_")
             .replace(":", "_")
@@ -288,7 +298,9 @@ class FbrefScrapperService(DriverMixin):
         )
         return f"{stat.capitalize()}_{sub_stat_cleaned}"
 
-    def get_teams_overall_rows(self, tables, season, stat, sub_stats):
+    def get_teams_overall_rows(
+        self, tables: t.List[WebElement], season: int, stat: str, sub_stats: str
+    ) -> pd.DataFrame:
         teams_overall_table = tables[0]
 
         head = teams_overall_table.find_elements(By.TAG_NAME, "tr")[1]
@@ -308,6 +320,8 @@ class FbrefScrapperService(DriverMixin):
 
         rows = teams_overall_table.find_elements(By.TAG_NAME, "tr")
 
+        league_str = self.get_league_str()
+
         teams_info = list()
 
         for i in tqdm(range(len(rows))):
@@ -322,7 +336,7 @@ class FbrefScrapperService(DriverMixin):
                 if len(tds) < len(sub_stats_indexes):
                     continue
 
-                team_info = [season, th.text]  # Team
+                team_info = [season, league_str, th.text]  # Team
 
                 for sub_stat_index in sub_stats_indexes.values():
                     sub_stat_value = tds[sub_stat_index - 1].text or None
@@ -333,7 +347,7 @@ class FbrefScrapperService(DriverMixin):
 
             teams_info.append(team_info)
 
-        index_columns = ["Season", "Team"]
+        index_columns = ["Season", "League", "Team"]
         stats_columns = [self.clean_sub_stat_str(stat, s) for s in sub_stats]
 
         df = pd.DataFrame(teams_info, columns=index_columns + stats_columns)
@@ -341,7 +355,9 @@ class FbrefScrapperService(DriverMixin):
 
         return df
 
-    def get_players_overall_rows(self, tables, season, stat, sub_stats):
+    def get_players_overall_rows(
+        self, tables: t.List[WebElement], season: int, stat: str, sub_stats: t.List[str]
+    ) -> pd.DataFrame:
         players_overall_table = tables[2]
 
         head = players_overall_table.find_elements(By.TAG_NAME, "tr")[1]
@@ -363,6 +379,8 @@ class FbrefScrapperService(DriverMixin):
 
         players_info = list()
 
+        league_str = self.get_league_str()
+
         for i in tqdm(range(len(rows))):
             r = rows[i]
             if not r.text:
@@ -376,6 +394,7 @@ class FbrefScrapperService(DriverMixin):
 
                 player_info = [
                     season,
+                    league_str,
                     tds[0].text,  # Name
                     tds[1].text.split(" ")[-1],  # Nation
                     tds[2].text,  # Position
@@ -392,7 +411,15 @@ class FbrefScrapperService(DriverMixin):
 
             players_info.append(player_info)
 
-        index_columns = ["Season", "Name", "Nation", "Position", "Team", "Age"]
+        index_columns = [
+            "Season",
+            "League",
+            "Name",
+            "Nation",
+            "Position",
+            "Team",
+            "Age",
+        ]
         stats_columns = [self.clean_sub_stat_str(stat, s) for s in sub_stats]
 
         df = pd.DataFrame(players_info, columns=index_columns + stats_columns)
@@ -400,7 +427,7 @@ class FbrefScrapperService(DriverMixin):
 
         return df
 
-    def clean_df(self, df: pd.DataFrame):
+    def clean_df(self, df: pd.DataFrame) -> None:
         for col in df.columns:
             # Standardize nulls to proper NA values
             df[col].replace(
@@ -420,20 +447,14 @@ class FbrefScrapperService(DriverMixin):
 
         df.reset_index(drop=False, inplace=True)
 
-    def fbref_overall_scrapper(self):
-        season_str = (
-            str(self.season)
-            if self.single_year_season
-            else f"{self.season}-{self.season+1}"
-        )
-
+    def fbref_overall_scrapper(self) -> t.Tuple[pd.DataFrame, pd.DataFrame]:
         teams_overall_info = None
         players_overall_info = None
 
         for stat, sub_stats in selected_stats.items():
             print(f"Scrapping {stat} data...")
 
-            url = f"https://fbref.com/en/comps/{self.fbref_league_id}/{season_str}/{stat}/Stats"
+            url = f"https://fbref.com/en/comps/{self.league_id}/{self.season_str}/{stat}/Stats"
 
             self.driver.get(url)
 
@@ -442,10 +463,10 @@ class FbrefScrapperService(DriverMixin):
             tables = fb.find_elements(By.CLASS_NAME, "stats_table")
 
             teams_stats_overall_info = self.get_teams_overall_rows(
-                tables, season_str, stat, sub_stats
+                tables, self.season_str, stat, sub_stats
             )
             players_stats_overall_info = self.get_players_overall_rows(
-                tables, season_str, stat, sub_stats
+                tables, self.season_str, stat, sub_stats
             )
 
             if teams_overall_info is None:
