@@ -26,34 +26,19 @@ for season in range(start_season, end_season + 1):
         season=season,
         single_year_season=single_year_season,
         fbref_league_id=fbref_league_id,
-        be_country=bet_explorer_country,
-        be_league=bet_explorer_league,
-        be_stage=bet_explorer_stage,
+        country=bet_explorer_country,
+        league=bet_explorer_league,
+        include_advanced_stats=include_advanced_stats,
     )
 
-    scrapper_service.start_driver()
-    scrapper_service.fbref_scrapper(include_advanced_stats)
-
-    if include_advanced_stats:
-        scrapper_service.fbref_advanced_stats_scrapper()
-
-    scrapper_service.combine_fbref_stats()
-
-    if bet_explorer_hide_last_season_str and season == end_season:
-        scrapper_service.bet_explorer_scrapper(hide_last_season_str=True)
-    else:
-        scrapper_service.bet_explorer_scrapper()
-
-    scrapper_service.close_driver()
-
-    scrapper_service.match_seasons_data()
+    full_data_df = scrapper_service.scrape_full_data()
 
     mysql_service = MySQLService()
 
     if create_matches_table and season == start_season:
-        mysql_service.create_table_from_df("matches", scrapper_service.fbref_season)
+        mysql_service.create_table_from_df("matches", full_data_df)
 
-    data_list = scrapper_service.fbref_season.to_dict(orient="records")
+    data_list = full_data_df.to_dict(orient="records")
 
     mysql_service.insert_multiple_rows("matches", data_list)
 

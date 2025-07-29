@@ -1,38 +1,57 @@
 from datetime import timedelta
 import pandas as pd
-from .bet_explorer import BetExplorerScrapperService
+
+from utils.helper_functions import get_season_str
+from .nowgoal import NowGoalScrapperService
 from .fbref import FbrefScrapperService
 from thefuzz import fuzz
 from tqdm import tqdm
 
 
-class ScrapperService(FbrefScrapperService, BetExplorerScrapperService):
+class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
     def __init__(
         self,
-        season,
-        single_year_season,
-        fbref_league_id,
-        be_stage=None,
-        be_country=None,
-        be_league=None,
+        season: int,
+        single_year_season: bool,
+        league: str,
+        country: str,
+        fbref_league_id: int,
+        include_advanced_stats: bool,
     ):
+        season_str = get_season_str(single_year_season, season)
+
         # Call the constructors of parent classes explicitly
         FbrefScrapperService.__init__(
             self,
-            be_league,
-            be_country,
-            fbref_league_id,
-            season,
-            single_year_season,
+            season_str=season_str,
+            league=league,
+            country=country,
+            fbref_league_id=fbref_league_id,
+            include_advanced_stats=include_advanced_stats,
         )
-        BetExplorerScrapperService.__init__(
+        NowGoalScrapperService.__init__(
             self,
-            be_country,
-            be_league,
-            be_stage,
-            season,
-            single_year_season,
         )
+
+    def scrape_full_data(self) -> pd.DataFrame:
+        self.start_driver()
+        self.fbref_scrapper()
+
+        if self.include_advanced_stats:
+            self.fbref_advanced_stats_scrapper()
+
+        self.combine_fbref_stats()
+
+        # if bet_explorer_hide_last_season_str and season == end_season:
+        #     self.bet_explorer_scrapper(hide_last_season_str=True)
+        # else:
+        #     self.bet_explorer_scrapper()
+
+        self.close_driver()
+
+        self.match_seasons_data()
+
+        return self.fbref_season
 
     def set_fuzz_score(self, home_team, away_team, row):
         home_score = fuzz.ratio(row["home_team"], home_team)
