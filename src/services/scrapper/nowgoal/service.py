@@ -1,8 +1,6 @@
 from services.scrapper.mixins.driver import DriverMixin
-import re
 import time
 import pandas as pd
-import numpy as np
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from tqdm import tqdm
@@ -140,7 +138,9 @@ class NowGoalScrapperService(DriverMixin):
 
         round_tds = self.driver.find_elements(By.CLASS_NAME, "lsm2")
 
-        for round_td in round_tds:
+        for i in tqdm(range(len(round_tds))):
+            round_td = round_tds[i]
+
             round_td.click()
 
             time.sleep(1.5)
