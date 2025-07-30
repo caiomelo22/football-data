@@ -34,10 +34,6 @@ league_id = 36
 create_nowgoal_matches_table = True
 single_year_season = False
 
-scrapper = NowGoalScrapperService()
-
-scrapper.start_driver()
-
 for season in range(first_season, last_season):
     if single_year_season:
         season_str = f"{season}"
@@ -46,11 +42,15 @@ for season in range(first_season, last_season):
 
     print(f"Fetching data for the {season_str} season...")
 
-    matches_data_df = scrapper.scrape_data(season_str=season_str, league_id=league_id)
+    scrapper = NowGoalScrapperService(league_id=league_id, season_str=season_str)
+
+    scrapper.start_driver()
+
+    scrapper.nowgoal_scrapper()
 
     if create_nowgoal_matches_table and season == first_season:
-        create_mysql_nowgoal_matches_table(matches_data_df)
+        create_mysql_nowgoal_matches_table(scrapper.nowgoal_data_df)
 
-    insert_nowgoal_matches(matches_data_df)
+    insert_nowgoal_matches(scrapper.nowgoal_data_df)
 
-scrapper.close_driver()
+    scrapper.close_driver()

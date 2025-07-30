@@ -16,6 +16,7 @@ class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
         league: str,
         country: str,
         fbref_league_id: int,
+        nowgoal_league_id: int,
         include_advanced_stats: bool,
     ):
         season_str = get_season_str(single_year_season, season)
@@ -30,11 +31,13 @@ class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
             include_advanced_stats=include_advanced_stats,
         )
         NowGoalScrapperService.__init__(
-            self,
+            self, league_id=nowgoal_league_id, season_str=season_str
         )
 
     def scrape_full_data(self) -> pd.DataFrame:
         self.start_driver()
+
+        # Fetch Fbref data
         self.fbref_scrapper()
 
         if self.include_advanced_stats:
@@ -42,73 +45,79 @@ class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
 
         self.combine_fbref_stats()
 
-        # if bet_explorer_hide_last_season_str and season == end_season:
-        #     self.bet_explorer_scrapper(hide_last_season_str=True)
-        # else:
-        #     self.bet_explorer_scrapper()
+        # Fetch NowGoal data
+        self.nowgoal_scrapper()
 
         self.close_driver()
 
+        # Match both Fbref and NowGoal data together
         self.match_seasons_data()
 
-        return self.fbref_season
+        return self.fbref_data_df
 
-    def set_fuzz_score(self, home_team, away_team, row):
+    def set_fuzz_score(self, home_team: str, away_team: str, row: pd.Series) -> int:
         home_score = fuzz.ratio(row["home_team"], home_team)
         away_score = fuzz.ratio(row["away_team"], away_team)
         return home_score + away_score
 
-    def match_seasons_data(self):
-        columns = [
-            "date",
-            "home_team",
-            "home_score",
-            "home_odds",
-            "away_team",
-            "away_score",
-            "away_odds",
-            "draw_odds",
+    def get_nowgoal_match_by_fbref_match(self, curr_match: pd.Series) -> pd.Series:
+        plus_one_day = self.nowgoal_data_df["date"] + timedelta(days=1)
+        minus_one_day = self.nowgoal_data_df["date"] - timedelta(days=1)
+
+        # Get NowGoal matches within a one day range from the Fbref match
+        # Just in case of match time divergences
+        same_date_matches = self.nowgoal_data_df[
+            (self.nowgoal_data_df["date"] == curr_match["date"])
+            | (minus_one_day == curr_match["date"])
+            | (plus_one_day == curr_match["date"])
+        ].reset_index(drop=True)
+
+        # Get the teams string matchup score for each match
+        same_date_matches["matchup_score"] = same_date_matches.apply(
+            lambda x: self.set_fuzz_score(
+                curr_match["home_team"], curr_match["away_team"], x
+            ),
+            axis=1,
+        )
+
+        # Select the one with the best score to merge the betting info
+        same_date_matches = same_date_matches.sort_values(
+            by="matchup_score", ascending=False
+        ).reset_index(drop=True)
+
+        nowgoal_match = same_date_matches.iloc[0]
+
+        return nowgoal_match
+
+    def match_seasons_data(self) -> None:
+        self.fbref_data_df["date"] = pd.to_datetime(self.fbref_data_df["date"])
+
+        betting_cols = [
+            col
+            for col in self.nowgoal_data_df.columns
+            if "odds" in col or "line" in col
         ]
-        odds_df = pd.DataFrame(self.bet_explorer_season, columns=columns)
 
-        self.fbref_season["date"] = pd.to_datetime(self.fbref_season["date"])
-
-        self.fbref_season["home_odds"] = None
-        self.fbref_season["away_odds"] = None
-        self.fbref_season["draw_odds"] = None
+        # Add betting cols to the Fbref DF
+        for betting_col in betting_cols:
+            self.fbref_data_df[betting_col] = None
 
         print("Matching seasons data:")
 
-        for i in tqdm(range(len(self.fbref_season))):
-            row = self.fbref_season.iloc[i]
+        for i in tqdm(range(len(self.fbref_data_df))):
+            row = self.fbref_data_df.iloc[i]
 
             try:
-                plus_one_day = odds_df["date"] + timedelta(days=1)
-                minus_one_day = odds_df["date"] - timedelta(days=1)
-                same_date_matches = odds_df[
-                    (odds_df["date"] == row["date"])
-                    | (minus_one_day == row["date"])
-                    | (plus_one_day == row["date"])
-                ].reset_index(drop=True)
-                same_date_matches["matchup_score"] = same_date_matches.apply(
-                    lambda x: self.set_fuzz_score(
-                        row["home_team"], row["away_team"], x
-                    ),
-                    axis=1,
-                )
-                same_date_matches = same_date_matches.sort_values(
-                    by="matchup_score", ascending=False
-                ).reset_index(drop=True)
-                match = same_date_matches.iloc[0]
+                nowgoal_match = self.get_nowgoal_match_by_fbref_match(row)
 
-                self.fbref_season.at[i, "home_odds"] = match["home_odds"]
-                self.fbref_season.at[i, "away_odds"] = match["away_odds"]
-                self.fbref_season.at[i, "draw_odds"] = match["draw_odds"]
-
+                # Add betting info to the Fbref DF
+                for betting_col in betting_cols:
+                    self.fbref_data_df.at[i, betting_col] = nowgoal_match[betting_col]
             except:
                 continue
 
-        self.fbref_season.rename(
+        # Clean column naming
+        self.fbref_data_df.rename(
             columns=lambda x: x.replace(":", "_")
             .replace("%", "_pct")
             .replace("-", "_")

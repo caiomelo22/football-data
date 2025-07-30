@@ -12,22 +12,23 @@ create_matches_table = False
 start_season = 2025
 end_season = 2025
 
+league = "serie-a-betano"
+country = "brazil"
+
 # Fbref info
 fbref_league_id = 24
 
-# BetExplorer info
-bet_explorer_league = "serie-a-betano"
-bet_explorer_country = "brazil"
-bet_explorer_stage = "Main"
-bet_explorer_hide_last_season_str = True
+# NowGoal info
+nowgoal_league_id = None
 
 for season in range(start_season, end_season + 1):
     scrapper_service = ScrapperService(
         season=season,
         single_year_season=single_year_season,
         fbref_league_id=fbref_league_id,
-        country=bet_explorer_country,
-        league=bet_explorer_league,
+        nowgoal_league_id=nowgoal_league_id,
+        country=country,
+        league=league,
         include_advanced_stats=include_advanced_stats,
     )
 
