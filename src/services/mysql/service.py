@@ -154,10 +154,10 @@ class MySQLService:
             columns = data_list[0].keys()
             values = [tuple(row.values()) for row in data_list]
 
-            if table_name == "matches":
-                query = self.get_insert_matches_query(table_name, columns)
-            elif "nowgoal_matches" in table_name:
+            if "nowgoal_matches" in table_name:
                 query = self.get_insert_nowgoal_matches_query(table_name, columns)
+            elif "matches" in table_name:
+                query = self.get_insert_matches_query(table_name, columns)
             elif "overall" in table_name:
                 query = self.get_insert_overall_query(table_name, columns, primary_keys)
             else:

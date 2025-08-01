@@ -1,5 +1,6 @@
 from datetime import timedelta
 import pandas as pd
+import typing as t
 
 from utils.helper_functions import get_season_str
 from .nowgoal import NowGoalScrapperService
@@ -31,8 +32,10 @@ class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
             include_advanced_stats=include_advanced_stats,
         )
         NowGoalScrapperService.__init__(
-            self, league_id=nowgoal_league_id, season_str=season_str
+            self, nowgoal_league_id=nowgoal_league_id, season_str=season_str
         )
+
+        self.season = season
 
     def scrape_full_data(self) -> pd.DataFrame:
         self.start_driver()
@@ -52,6 +55,8 @@ class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
 
         # Match both Fbref and NowGoal data together
         self.match_seasons_data()
+
+        self.fbref_data_df.to_excel("final.xlsx", index=False)
 
         return self.fbref_data_df
 
@@ -89,14 +94,20 @@ class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
 
         return nowgoal_match
 
+    def get_betting_columns_from_nowgoal_df(self) -> t.List:
+        betting_cols = []
+
+        for col in self.nowgoal_data_df.columns:
+            if "odds" in col or "line" in col:
+                betting_cols.append(col)
+
+        return betting_cols
+
     def match_seasons_data(self) -> None:
         self.fbref_data_df["date"] = pd.to_datetime(self.fbref_data_df["date"])
+        self.fbref_data_df["season"] = self.season
 
-        betting_cols = [
-            col
-            for col in self.nowgoal_data_df.columns
-            if "odds" in col or "line" in col
-        ]
+        betting_cols = self.get_betting_columns_from_nowgoal_df()
 
         # Add betting cols to the Fbref DF
         for betting_col in betting_cols:
@@ -105,10 +116,10 @@ class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
         print("Matching seasons data:")
 
         for i in tqdm(range(len(self.fbref_data_df))):
-            row = self.fbref_data_df.iloc[i]
+            curr_match = self.fbref_data_df.iloc[i]
 
             try:
-                nowgoal_match = self.get_nowgoal_match_by_fbref_match(row)
+                nowgoal_match = self.get_nowgoal_match_by_fbref_match(curr_match)
 
                 # Add betting info to the Fbref DF
                 for betting_col in betting_cols:

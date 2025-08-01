@@ -42,7 +42,9 @@ for season in range(first_season, last_season):
 
     print(f"Fetching data for the {season_str} season...")
 
-    scrapper = NowGoalScrapperService(league_id=league_id, season_str=season_str)
+    scrapper = NowGoalScrapperService(
+        nowgoal_league_id=league_id, season_str=season_str
+    )
 
     scrapper.start_driver()
 

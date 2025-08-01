@@ -86,6 +86,6 @@ for league in leagues_to_refresh:
     mysql_service = MySQLService()
 
     data_list = full_data_df.to_dict(orient="records")
-    mysql_service.insert_multiple_rows("matches", data_list)
+    mysql_service.insert_multiple_rows("matches_v2", data_list)
 
     mysql_service.close()

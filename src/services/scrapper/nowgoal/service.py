@@ -9,12 +9,12 @@ from datetime import datetime
 
 
 class NowGoalScrapperService(DriverMixin):
-    def __init__(self, league_id: int, season_str: str):
+    def __init__(self, nowgoal_league_id: int, season_str: str):
         DriverMixin.__init__(
             self,
         )
 
-        self.league_id = league_id
+        self.nowgoal_league_id = nowgoal_league_id
         self.season_str = season_str
 
     def get_betting_data_from_match(
@@ -72,12 +72,12 @@ class NowGoalScrapperService(DriverMixin):
     def build_match_date(self, match_date: WebElement) -> datetime:
         match_date_attr = match_date.get_attribute("data-t")
 
-        date, time = match_date_attr.split(" ")
+        date, _ = match_date_attr.split(" ")
 
         year, month, day = date.split("-")
-        hour, minute = time.split(":")
 
-        new_date = datetime(int(year), int(month), int(day), int(hour), int(minute))
+        # Ignore the time of the matches since there might be timezone divergences
+        new_date = datetime(int(year), int(month), int(day), 0, 0)
 
         return new_date
 
@@ -135,7 +135,7 @@ class NowGoalScrapperService(DriverMixin):
         }
 
     def nowgoal_scrapper(self) -> None:
-        url = f"https://football.nowgoal.com/league/{self.season_str}/{self.league_id}"
+        url = f"https://football.nowgoal.com/league/{self.season_str}/{self.nowgoal_league_id}"
         self.driver.get(url)
 
         season = int(self.season_str.split("-")[0])

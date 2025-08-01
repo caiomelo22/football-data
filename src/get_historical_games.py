@@ -6,20 +6,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # General infos
-single_year_season = True
+single_year_season = False
 include_advanced_stats = False
-create_matches_table = False
-start_season = 2025
-end_season = 2025
+create_matches_table = True
+start_season = 2024
+end_season = 2024
 
-league = "serie-a-betano"
-country = "brazil"
+league = "premier-league"
+country = "england"
 
 # Fbref info
-fbref_league_id = 24
+fbref_league_id = 9
 
 # NowGoal info
-nowgoal_league_id = None
+nowgoal_league_id = 36
+
+# DB data
+matches_table = "matches_v2"
+advanced_stats_table = "matches_v2_advanced_stats"
 
 for season in range(start_season, end_season + 1):
     scrapper_service = ScrapperService(
@@ -37,10 +41,26 @@ for season in range(start_season, end_season + 1):
     mysql_service = MySQLService()
 
     if create_matches_table and season == start_season:
-        mysql_service.create_table_from_df("matches", full_data_df)
+        pk_cols = ["date", "league", "home_team", "away_team"]
+        mysql_service.create_table_from_df(matches_table, full_data_df, pk_cols)
 
     data_list = full_data_df.to_dict(orient="records")
 
-    mysql_service.insert_multiple_rows("matches", data_list)
+    mysql_service.insert_multiple_rows(matches_table, data_list)
+
+    if include_advanced_stats:
+        advanced_stats_df = scrapper_service.advanced_stats_df
+
+        if create_matches_table and season == start_season:
+            pk_cols = ["date", "league", "home_team", "away_team"]
+            mysql_service.create_table_from_df(
+                advanced_stats_table, advanced_stats_df, pk_cols
+            )
+
+        advanced_stats_data_list = advanced_stats_df.to_dict(orient="records")
+
+        mysql_service.insert_multiple_rows(
+            advanced_stats_table, advanced_stats_data_list
+        )
 
     mysql_service.close()
