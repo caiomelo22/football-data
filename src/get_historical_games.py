@@ -1,6 +1,8 @@
 import numpy as np
-from services import ScrapperService, MySQLService
+from services import ScrapperService
 from dotenv import load_dotenv
+
+from utils.helper_functions import insert_matches
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -38,29 +40,14 @@ for season in range(start_season, end_season + 1):
 
     full_data_df = scrapper_service.scrape_full_data()
 
-    mysql_service = MySQLService()
+    advanced_stats_df = (
+        scrapper_service.advanced_stats_df if include_advanced_stats else None
+    )
 
-    if create_matches_table and season == start_season:
-        pk_cols = ["date", "league", "home_team", "away_team"]
-        mysql_service.create_table_from_df(matches_table, full_data_df, pk_cols)
-
-    data_list = full_data_df.to_dict(orient="records")
-
-    mysql_service.insert_multiple_rows(matches_table, data_list)
-
-    if include_advanced_stats:
-        advanced_stats_df = scrapper_service.advanced_stats_df
-
-        if create_matches_table and season == start_season:
-            pk_cols = ["date", "league", "home_team", "away_team"]
-            mysql_service.create_table_from_df(
-                advanced_stats_table, advanced_stats_df, pk_cols
-            )
-
-        advanced_stats_data_list = advanced_stats_df.to_dict(orient="records")
-
-        mysql_service.insert_multiple_rows(
-            advanced_stats_table, advanced_stats_data_list
-        )
-
-    mysql_service.close()
+    insert_matches(
+        matches_table=matches_table,
+        advanced_stats_table=advanced_stats_table,
+        data_df=full_data_df,
+        create_matches_table=create_matches_table and season == start_season,
+        advanced_stats_df=advanced_stats_df,
+    )

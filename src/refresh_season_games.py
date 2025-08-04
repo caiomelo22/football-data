@@ -2,10 +2,16 @@ import numpy as np
 from services import ScrapperService, MySQLService
 from dotenv import load_dotenv
 
+from utils.helper_functions import insert_matches
+
 # Load environment variables from the .env file
 load_dotenv()
 
 season = 2024
+
+# DB data
+matches_table = "matches_v2"
+advanced_stats_table = "matches_v2_advanced_stats"
 
 # General infos
 leagues_to_refresh = [
@@ -83,9 +89,13 @@ for league in leagues_to_refresh:
 
     full_data_df = scrapper_service.scrape_full_data()
 
-    mysql_service = MySQLService()
+    advanced_stats_df = (
+        scrapper_service.advanced_stats_df if league["include_advanced_stats"] else None
+    )
 
-    data_list = full_data_df.to_dict(orient="records")
-    mysql_service.insert_multiple_rows("matches_v2", data_list)
-
-    mysql_service.close()
+    insert_matches(
+        matches_table=matches_table,
+        advanced_stats_table=advanced_stats_table,
+        data_df=full_data_df,
+        advanced_stats_df=advanced_stats_df,
+    )
