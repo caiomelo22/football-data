@@ -4,7 +4,7 @@ import pandas as pd
 import typing as t
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-from .stats_helper import selected_stats
+from .stats_helper import selected_stats, overall_stats
 from ..mixins import DriverMixin
 from tqdm import tqdm
 
@@ -192,7 +192,9 @@ class FbrefScrapperService(DriverMixin):
             prefixed_cols = ["away_" + col for col in cols]
 
         # Save the advanced stats in the dict by the composed key (home, away, date)
-        stats_dict = {col: stat for col, stat in zip(prefixed_cols, stats)}
+        stats_dict = {
+            self.clean_stat_str(col): stat for col, stat in zip(prefixed_cols, stats)
+        }
         stats_dict = {
             **stats_dict,
             "league": self.league_str,
@@ -299,14 +301,19 @@ class FbrefScrapperService(DriverMixin):
 
         if self.include_advanced_stats:
             self.advanced_stats_df = pd.DataFrame(self.advanced_stats_dict.values())
+            self.advanced_stats_df.to_excel("advanced.xlsx", index=False)
 
-    def clean_sub_stat_str(self, stat: str, sub_stat: str) -> str:
-        sub_stat_cleaned = (
-            sub_stat.replace("-", "_")
+    def clean_stat_str(self, stat: str) -> str:
+        return (
+            stat.replace("-", "_")
             .replace(":", "_")
             .replace("/", "_")
+            .replace(" ", "_")
             .replace("%", "Pct")
         )
+
+    def clean_sub_stat_str(self, stat: str, sub_stat: str) -> str:
+        sub_stat_cleaned = self.clean_stat_str(sub_stat)
         return f"{stat.capitalize()}_{sub_stat_cleaned}"
 
     def get_teams_overall_rows(
@@ -458,7 +465,7 @@ class FbrefScrapperService(DriverMixin):
         teams_overall_info = None
         players_overall_info = None
 
-        for stat, sub_stats in selected_stats.items():
+        for stat, sub_stats in overall_stats.items():
             print(f"Scrapping {stat} data...")
 
             url = f"https://fbref.com/en/comps/{self.fbref_league_id}/{self.season_str}/{stat}/Stats"

@@ -56,8 +56,6 @@ class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
         # Match both Fbref and NowGoal data together
         self.match_seasons_data()
 
-        self.fbref_data_df.to_excel("final.xlsx", index=False)
-
         return self.fbref_data_df
 
     def set_fuzz_score(self, home_team: str, away_team: str, row: pd.Series) -> int:

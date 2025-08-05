@@ -9,7 +9,7 @@ load_dotenv()
 
 # General infos
 single_year_season = False
-include_advanced_stats = False
+include_advanced_stats = True
 create_matches_table = True
 start_season = 2024
 end_season = 2024
