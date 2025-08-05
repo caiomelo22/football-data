@@ -13,6 +13,10 @@ def get_season_str(single_year_season: bool, season: t.Optional[int]) -> str:
         return f"{season}-{season+1}"
 
 
+def get_league_str(country: str, league: str) -> str:
+    return f"{country}-{league}"
+
+
 def insert_matches(
     matches_table: str,
     advanced_stats_table: str,

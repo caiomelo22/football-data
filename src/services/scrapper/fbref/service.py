@@ -4,6 +4,8 @@ import pandas as pd
 import typing as t
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+
+from utils.helper_functions import get_league_str
 from .stats_helper import selected_stats, overall_stats
 from ..mixins import DriverMixin
 from tqdm import tqdm
@@ -25,7 +27,7 @@ class FbrefScrapperService(DriverMixin):
         self.season_str = season_str
         self.country = country
         self.league = league
-        self.league_str = self.get_league_str()
+        self.league_str = get_league_str(country, league)
         self.fbref_league_id = fbref_league_id
         self.include_advanced_stats = include_advanced_stats
 
@@ -274,9 +276,6 @@ class FbrefScrapperService(DriverMixin):
 
         return match_dict
 
-    def get_league_str(self) -> str:
-        return f"{self.country}-{self.league}"
-
     def combine_fbref_stats(self) -> None:
         print(f"Total matches in the {self.season_str} season:", len(self.fbref_data))
 
@@ -297,11 +296,10 @@ class FbrefScrapperService(DriverMixin):
 
         self.fbref_data_df = pd.DataFrame(complete_matches)
 
-        self.fbref_data_df["league"] = self.league
+        self.fbref_data_df["league"] = self.league_str
 
         if self.include_advanced_stats:
             self.advanced_stats_df = pd.DataFrame(self.advanced_stats_dict.values())
-            self.advanced_stats_df.to_excel("advanced.xlsx", index=False)
 
     def clean_stat_str(self, stat: str) -> str:
         return (
