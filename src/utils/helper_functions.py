@@ -22,17 +22,17 @@ def insert_matches(
 ) -> None:
     mysql_service = MySQLService()
 
+    pk_cols = ["date", "home_team", "away_team"]
+
     if create_matches_table:
-        pk_cols = ["date", "league", "home_team", "away_team"]
         mysql_service.create_table_from_df(matches_table, data_df, pk_cols)
 
     data_list = data_df.to_dict(orient="records")
 
-    mysql_service.insert_multiple_rows(matches_table, data_list)
+    mysql_service.insert_multiple_rows(matches_table, data_list, pk_cols)
 
     if advanced_stats_df is not None:
         if create_matches_table:
-            pk_cols = ["date", "league", "home_team", "away_team"]
             mysql_service.create_table_from_df(
                 advanced_stats_table, advanced_stats_df, pk_cols
             )
@@ -40,7 +40,7 @@ def insert_matches(
         advanced_stats_data_list = advanced_stats_df.to_dict(orient="records")
 
         mysql_service.insert_multiple_rows(
-            advanced_stats_table, advanced_stats_data_list
+            advanced_stats_table, advanced_stats_data_list, pk_cols
         )
 
     mysql_service.close()

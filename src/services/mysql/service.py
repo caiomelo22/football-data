@@ -94,42 +94,10 @@ class MySQLService:
 
         return clean_list
 
-    def get_insert_matches_query(self, table_name, columns):
-        # Assuming 'id' is the unique key for the 'matches' table
-        query = f"""
-            INSERT INTO {table_name} ({', '.join(columns)})
-            VALUES ({', '.join(['%s'] * len(columns))})
-            ON DUPLICATE KEY UPDATE 
-                home_odds = VALUES(home_odds),
-                away_odds = VALUES(away_odds),
-                draw_odds = VALUES(draw_odds)
-        """
-
-        return query
-
-    def get_insert_nowgoal_matches_query(self, table_name, columns):
-        # Assuming 'id' is the unique key for the 'matches' table
-        query = f"""
-            INSERT INTO {table_name} ({', '.join(columns)})
-            VALUES ({', '.join(['%s'] * len(columns))})
-            ON DUPLICATE KEY UPDATE 
-                home_odds = VALUES(home_odds),
-                away_odds = VALUES(away_odds),
-                draw_odds = VALUES(draw_odds),
-                home_ahc_odds = VALUES(home_ahc_odds),
-                away_ahc_odds = VALUES(away_ahc_odds),
-                ahc_line = VALUES(ahc_line),
-                overs_odds = VALUES(overs_odds),
-                unders_odds = VALUES(unders_odds),
-                totals_line = VALUES(totals_line)
-        """
-
-        return query
-
-    def get_insert_overall_query(self, table_name, columns, primary_keys):
+    def get_insert_update_query(self, table_name, columns, primary_keys):
         if not primary_keys:
             raise ValueError(
-                "Primary key columns must be provided for 'overall' tables."
+                f"Primary key columns must be provided for the '{table_name}' table."
             )
 
         update_columns = [col for col in columns if col not in primary_keys]
@@ -154,12 +122,8 @@ class MySQLService:
             columns = data_list[0].keys()
             values = [tuple(row.values()) for row in data_list]
 
-            if "nowgoal_matches" in table_name:
-                query = self.get_insert_nowgoal_matches_query(table_name, columns)
-            elif "matches" in table_name:
-                query = self.get_insert_matches_query(table_name, columns)
-            elif "overall" in table_name:
-                query = self.get_insert_overall_query(table_name, columns, primary_keys)
+            if primary_keys:
+                query = self.get_insert_update_query(table_name, columns, primary_keys)
             else:
                 query = self.get_default_insert_query(table_name, columns)
 
