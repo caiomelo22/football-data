@@ -47,7 +47,7 @@ class MySQLService:
                 "int64": "INT",
                 "float64": "FLOAT",
                 "datetime64[ns]": "DATETIME",
-                "object": "VARCHAR(255)",
+                "object": "VARCHAR(100)",
             }
 
             # Iterate over DataFrame columns to determine data types for table creation
