@@ -87,52 +87,65 @@ class NowGoalScrapperService(DriverMixin):
         ahc_span: WebElement,
         moneyline_span: WebElement,
         totals_span: WebElement,
-    ) -> dict:
-        match_cols = match.find_elements(By.TAG_NAME, "td")
-        match_info_cols = match_cols[:5]  # Only get the columns with useful data
+    ) -> t.Optional[dict]:
+        # If it fails the first time, try again after sleeping for 1.5 second
+        for i in range(2):
+            try:
+                if i > 0:
+                    time.sleep(1.5)
 
-        match_round, match_date, home_team, score, away_team = match_info_cols
+                match_cols = match.find_elements(By.TAG_NAME, "td")
+                match_info_cols = match_cols[
+                    :5
+                ]  # Only get the columns with useful data
 
-        home_score, away_score = self.get_match_score(score)
+                match_round, match_date, home_team, score, away_team = match_info_cols
 
-        if None in [home_score, away_score]:
-            return None
+                home_score, away_score = self.get_match_score(score)
 
-        home_team = self.clean_team_name(home_team)
-        away_team = self.clean_team_name(away_team)
+                if None in [home_score, away_score]:
+                    return None
 
-        match_date_formatted = self.build_match_date(match_date)
+                home_team = self.clean_team_name(home_team)
+                away_team = self.clean_team_name(away_team)
 
-        home_ahc_odds, ahc_line, away_ahc_odds = self.get_betting_data_from_match(
-            match_cols, ahc_span
-        )
-        home_odds, draw_odds, away_odds = self.get_betting_data_from_match(
-            match_cols, moneyline_span
-        )
-        overs_odds, totals_line, unders_odds = self.get_betting_data_from_match(
-            match_cols, totals_span
-        )
+                match_date_formatted = self.build_match_date(match_date)
 
-        return {
-            "round": int(match_round.text),
-            "date": match_date_formatted,
-            "home_team": home_team,
-            "away_team": away_team,
-            "home_score": home_score,
-            "away_score": away_score,
-            # Moneyline odds
-            "home_odds": home_odds,
-            "draw_odds": draw_odds,
-            "away_odds": away_odds,
-            # Asian Handicap odds
-            "home_ahc_odds": home_ahc_odds,
-            "ahc_line": ahc_line,
-            "away_ahc_odds": away_ahc_odds,
-            # Totals odds
-            "overs_odds": overs_odds,
-            "totals_line": totals_line,
-            "unders_odds": unders_odds,
-        }
+                home_ahc_odds, ahc_line, away_ahc_odds = (
+                    self.get_betting_data_from_match(match_cols, ahc_span)
+                )
+                home_odds, draw_odds, away_odds = self.get_betting_data_from_match(
+                    match_cols, moneyline_span
+                )
+                overs_odds, totals_line, unders_odds = self.get_betting_data_from_match(
+                    match_cols, totals_span
+                )
+
+                return {
+                    "round": int(match_round.text),
+                    "date": match_date_formatted,
+                    "home_team": home_team,
+                    "away_team": away_team,
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    # Moneyline odds
+                    "home_odds": home_odds,
+                    "draw_odds": draw_odds,
+                    "away_odds": away_odds,
+                    # Asian Handicap odds
+                    "home_ahc_odds": home_ahc_odds,
+                    "ahc_line": ahc_line,
+                    "away_ahc_odds": away_ahc_odds,
+                    # Totals odds
+                    "overs_odds": overs_odds,
+                    "totals_line": totals_line,
+                    "unders_odds": unders_odds,
+                }
+            except:
+                if i == 0:
+                    continue
+
+                return None
 
     def nowgoal_scrapper(self) -> None:
         url = f"https://football.nowgoal.com/league/{self.season_str}/{self.nowgoal_league_id}"
