@@ -1,57 +1,65 @@
 from services.scrapper.mixins.driver import DriverMixin
 import time
 import pandas as pd
+import typing as t
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from tqdm import tqdm
-from typing import List
 from datetime import datetime
 
 
 class NowGoalScrapperService(DriverMixin):
-    def __init__(self):
+    def __init__(self, nowgoal_league_id: int, season_str: str):
         DriverMixin.__init__(
             self,
         )
 
+        self.nowgoal_league_id = nowgoal_league_id
+        self.season_str = season_str
+
     def get_betting_data_from_match(
-        self, match_cols: List[WebElement], market_element: WebElement
-    ):
+        self, match_cols: t.List[WebElement], market_element: WebElement
+    ) -> t.List[float]:
         market_element.click()
 
-        market_cols = match_cols[5:8]
+        # Define the betting columns
+        betting_cols = match_cols[5:8]
 
-        market_cols_formatted = []
+        betting_cols_formatted = []
 
-        for col in market_cols:
+        for col in betting_cols:
             col_text = col.text
 
             if "/" not in col_text:
-                market_cols_formatted.append(float(col_text))
+                betting_cols_formatted.append(float(col_text))
                 continue
 
+            # Case of quarter lines
             val_splitted = col_text.split("/")
 
             first_value = float(val_splitted[0])
             second_value = float(val_splitted[1])
 
+            # If both parts of the string are negative, get a negative result
             if first_value < 0:
                 second_value *= -1
 
             formatted_value = (first_value + second_value) / 2
 
-            market_cols_formatted.append(formatted_value)
+            betting_cols_formatted.append(formatted_value)
 
-        return market_cols_formatted
+        return betting_cols_formatted
 
-    def clean_team_name(self, team: WebElement):
+    def clean_team_name(self, team: WebElement) -> str:
         a_tag = team.find_element(By.TAG_NAME, "a")
 
         team_text = a_tag.text
 
         return team_text
 
-    def get_match_score(self, score: WebElement):
+    def get_match_score(
+        self, score: WebElement
+    ) -> t.Tuple[t.Optional[int], t.Optional[int]]:
         score_text = score.text
 
         try:
@@ -61,15 +69,15 @@ class NowGoalScrapperService(DriverMixin):
         except:
             return None, None
 
-    def build_match_date(self, match_date: WebElement):
+    def build_match_date(self, match_date: WebElement) -> datetime:
         match_date_attr = match_date.get_attribute("data-t")
 
-        date, time = match_date_attr.split(" ")
+        date, _ = match_date_attr.split(" ")
 
         year, month, day = date.split("-")
-        hour, minute = time.split(":")
 
-        new_date = datetime(int(year), int(month), int(day), int(hour), int(minute))
+        # Ignore the time of the matches since there might be timezone divergences
+        new_date = datetime(int(year), int(month), int(day), 0, 0)
 
         return new_date
 
@@ -79,58 +87,71 @@ class NowGoalScrapperService(DriverMixin):
         ahc_span: WebElement,
         moneyline_span: WebElement,
         totals_span: WebElement,
-    ):
-        match_cols = match.find_elements(By.TAG_NAME, "td")
-        match_info_cols = match_cols[:5]  # Only get the columns with useful data
+    ) -> t.Optional[dict]:
+        # If it fails the first time, try again after sleeping for 1.5 second
+        for i in range(2):
+            try:
+                if i > 0:
+                    time.sleep(1.5)
 
-        match_round, match_date, home_team, score, away_team = match_info_cols
+                match_cols = match.find_elements(By.TAG_NAME, "td")
+                match_info_cols = match_cols[
+                    :5
+                ]  # Only get the columns with useful data
 
-        home_score, away_score = self.get_match_score(score)
+                match_round, match_date, home_team, score, away_team = match_info_cols
 
-        if None in [home_score, away_score]:
-            return None
+                home_score, away_score = self.get_match_score(score)
 
-        home_team = self.clean_team_name(home_team)
-        away_team = self.clean_team_name(away_team)
+                if None in [home_score, away_score]:
+                    return None
 
-        match_date_formatted = self.build_match_date(match_date)
+                home_team = self.clean_team_name(home_team)
+                away_team = self.clean_team_name(away_team)
 
-        home_ahc_odds, ahc_line, away_ahc_odds = self.get_betting_data_from_match(
-            match_cols, ahc_span
-        )
-        home_odds, draw_odds, away_odds = self.get_betting_data_from_match(
-            match_cols, moneyline_span
-        )
-        overs_odds, totals_line, unders_odds = self.get_betting_data_from_match(
-            match_cols, totals_span
-        )
+                match_date_formatted = self.build_match_date(match_date)
 
-        return {
-            "round": int(match_round.text),
-            "date": match_date_formatted,
-            "home_team": home_team,
-            "away_team": away_team,
-            "home_score": home_score,
-            "away_score": away_score,
-            # Moneyline odds
-            "home_odds": home_odds,
-            "draw_odds": draw_odds,
-            "away_odds": away_odds,
-            # Asian Handicap odds
-            "home_ahc_odds": home_ahc_odds,
-            "ahc_line": ahc_line,
-            "away_ahc_odds": away_ahc_odds,
-            # Totals odds
-            "overs_odds": overs_odds,
-            "totals_line": totals_line,
-            "unders_odds": unders_odds,
-        }
+                home_ahc_odds, ahc_line, away_ahc_odds = (
+                    self.get_betting_data_from_match(match_cols, ahc_span)
+                )
+                home_odds, draw_odds, away_odds = self.get_betting_data_from_match(
+                    match_cols, moneyline_span
+                )
+                overs_odds, totals_line, unders_odds = self.get_betting_data_from_match(
+                    match_cols, totals_span
+                )
 
-    def scrape_data(self, season_str, league_id) -> pd.DataFrame:
-        url = f"https://football.nowgoal.com/league/{season_str}/{league_id}"
+                return {
+                    "round": int(match_round.text),
+                    "date": match_date_formatted,
+                    "home_team": home_team,
+                    "away_team": away_team,
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    # Moneyline odds
+                    "home_odds": home_odds,
+                    "draw_odds": draw_odds,
+                    "away_odds": away_odds,
+                    # Asian Handicap odds
+                    "home_ahc_odds": home_ahc_odds,
+                    "ahc_line": ahc_line,
+                    "away_ahc_odds": away_ahc_odds,
+                    # Totals odds
+                    "overs_odds": overs_odds,
+                    "totals_line": totals_line,
+                    "unders_odds": unders_odds,
+                }
+            except:
+                if i == 0:
+                    continue
+
+                return None
+
+    def nowgoal_scrapper(self) -> None:
+        url = f"https://football.nowgoal.com/league/{self.season_str}/{self.nowgoal_league_id}"
         self.driver.get(url)
 
-        season = int(season_str.split("-")[0])
+        season = int(self.season_str.split("-")[0])
 
         time.sleep(3)
 
@@ -173,4 +194,4 @@ class NowGoalScrapperService(DriverMixin):
 
         matches_data_df["season"] = season
 
-        return matches_data_df
+        self.nowgoal_data_df = matches_data_df

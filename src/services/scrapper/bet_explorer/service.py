@@ -1,42 +1,61 @@
 import time
-from datetime import datetime as dt, timedelta
+import typing as t
+import pandas as pd
+from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 from tqdm import tqdm
+
+from utils.helper_functions import get_season_str
 
 from ..mixins import DriverMixin
 
 
 class BetExplorerScrapperService(DriverMixin):
-    def __init__(self, country, league, stage, season, single_year_season):
+    def __init__(
+        self,
+        country: str,
+        league: str,
+        stage: str,
+        season: t.Optional[int],
+        single_year_season: bool,
+    ):
         DriverMixin.__init__(
             self,
             season=season,
             single_year_season=single_year_season,
         )
         self.stage = stage
-        self.bet_explorer_country = country
-        self.bet_explorer_league = league
+        self.country = country
+        self.league = league
 
-    def transform_odds_date(self, date):
-        return dt.strptime(date, "%d.%m.%Y")
-
-    def bet_explorer_scrapper(self, hide_last_season_str=False):
-        self.bet_explorer_season = []
-
-        if hide_last_season_str:
-            season_str = ""
-        elif self.single_year_season:
-            season_str = f"-{self.season}"
+    def parse_betexplorer_date(self, date_str: str) -> datetime:
+        if date_str == "Today":
+            date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        elif date_str == "Yesterday":
+            date = (datetime.now() - timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
         else:
-            season_str = f"-{self.season}-{self.season+1}"
+            if not date_str.split(".")[-1]:
+                date_str += str(datetime.now().year)
+            date = datetime.strptime(date_str, "%d.%m.%Y")
 
-        url = f"https://www.betexplorer.com/football/{self.bet_explorer_country}/{self.bet_explorer_league}{season_str}/results/"
+        return date
 
-        print(url)
+    def bet_explorer_scrapper(self) -> None:
+        bet_explorer_data = []
+
+        season_str = get_season_str(self.single_year_season, self.season)
+        if season_str:
+            season_str = f"-{season_str}"
+
+        url = f"https://www.betexplorer.com/football/{self.country}/{self.league}{season_str}/results/"
+
         self.driver.get(url)
 
         time.sleep(5)
 
+        # Select the desired stage if valid
         try:
             if self.stage:
                 btn = self.driver.find_element(
@@ -51,16 +70,15 @@ class BetExplorerScrapperService(DriverMixin):
         table = self.driver.find_element(
             By.XPATH, '//*[@id="js-leagueresults-all"]/div/div/table'
         )
-        rows = table.find_elements(By.XPATH, ".//tbody/tr")
+        matches = table.find_elements(By.XPATH, ".//tbody/tr")
 
-        total_games = 0
-        print("Scrapping info from the betexplorer website:")
-        for i in tqdm(range(len(rows))):
-            r = rows[i]
-            if not r.text:
+        print("Scrapping info from the BetExplore website:")
+        for i in tqdm(range(len(matches))):
+            curr_match = matches[i]
+            if not curr_match.text:
                 continue
 
-            tds = r.find_elements(By.XPATH, ".//child::td")
+            tds = curr_match.find_elements(By.XPATH, ".//child::td")
             if len(tds) < 6:
                 continue
 
@@ -77,31 +95,20 @@ class BetExplorerScrapperService(DriverMixin):
                     continue
                 home_team, away_team = matchup.split(" - ")
 
-                if date == "Today":
-                    date = dt.now()
-                    date = date.replace(
-                        hour=0, minute=0, second=0, microsecond=0
-                    ).strftime("%d.%m.%Y")
-                elif date == "Yesterday":
-                    date = dt.now() - timedelta(days=1)
-                    date = date.replace(
-                        hour=0, minute=0, second=0, microsecond=0
-                    ).strftime("%d.%m.%Y")
-                else:
-                    if not date.split(".")[-1]:
-                        date += str(dt.now().year)
+                parsed_date = self.parse_betexplorer_date(date)
 
-                match_info = [
-                    self.transform_odds_date(date),
-                    home_team,
-                    int(home_score),
-                    float(home_odds),
-                    away_team,
-                    int(away_score),
-                    float(away_odds),
-                    float(draw_odds),
-                ]
-                self.bet_explorer_season.append(match_info)
-                total_games += 1
-            except Exception as e:
+                match_info = {
+                    "date": parsed_date,
+                    "home_team": home_team,
+                    "home_score": int(home_score),
+                    "home_odds": float(home_odds),
+                    "away_team": away_team,
+                    "away_score": int(away_score),
+                    "away_odds": float(away_odds),
+                    "draw_odds": float(draw_odds),
+                }
+                bet_explorer_data.append(match_info)
+            except Exception:
                 continue
+
+        self.bet_explorer_data_df = pd.DataFrame(bet_explorer_data)
