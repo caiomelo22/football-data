@@ -1,5 +1,5 @@
 # Intro
-Project designed to gather and store data from football leagues scrapped on the betexplorer and fbref websites. This project collects stats and advanced stats from the fbref website and gathers odds info for each match on BetExplorer. In the end, it combines all of the information into your MySQL server.
+Project designed to gather and store data from football leagues scrapped on the nowgoal and fbref websites. This project collects stats and advanced stats from the fbref website and gathers betting info for each match on NowGoal. In the end, it combines all of the information into your MySQL server.
 
 # Setup
 In order to run this program, you are gonna have to create a `.env` file in the root of the project. In this env file, you'll have to set the following variables to connect to your host MySQL server:
@@ -33,6 +33,18 @@ Now we have a new program to fetch overall stats for each team and players of a 
 
 ```
 >> python ./src/get_overall_info.py
+```
+
+Additionally, if you'd like to save only the betting info from NowGoal, just run the [Get NowGoal Data](https://github.com/caiomelo22/football-data/blob/main/src/get_nowgoal_data.py).
+
+```
+>> python ./src/get_nowgoal_data.py
+```
+
+Or you can do the same with the BetExplorer data, which is no longer used in the main scripts of this project. To do so, just run the [Get BetExplorer Data](https://github.com/caiomelo22/football-data/blob/main/src/get_betexplorer_data.py).
+
+```
+>> python ./src/get_bet_explorer_data.py
 ```
 
 ## Customize leagues
