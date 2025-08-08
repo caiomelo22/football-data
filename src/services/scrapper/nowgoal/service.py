@@ -146,6 +146,23 @@ class NowGoalScrapperService(DriverMixin):
                     continue
 
                 return None
+            
+    def get_match_html_elements(self, prev_first_match: t.Optional[WebElement]) -> t.List[WebElement]:
+        for i in range(2):
+            time.sleep(i+1)
+
+            matches_table = self.driver.find_element(By.ID, "Table3")
+            matches_table_trs = matches_table.find_elements(By.TAG_NAME, "tr")
+
+            matches = matches_table_trs[2:]  # Remove the first unused rows
+
+            # Retry in case there was no time to update the matches elements
+            if matches[0] == prev_first_match:
+                continue
+
+            return matches
+        
+        return []
 
     def nowgoal_scrapper(self) -> None:
         url = f"https://football.nowgoal.com/league/{self.season_str}/{self.nowgoal_league_id}"
@@ -159,24 +176,21 @@ class NowGoalScrapperService(DriverMixin):
 
         round_tds = self.driver.find_elements(By.CLASS_NAME, "lsm2")
 
+        prev_first_match = None
+
         for i in tqdm(range(len(round_tds))):
             round_td = round_tds[i]
 
             round_td.click()
 
-            time.sleep(1.5)
+            matches = self.get_match_html_elements(prev_first_match)
 
             odds_div = self.driver.find_element(By.CLASS_NAME, "odds")
 
             ahc_span, moneyline_span, totals_span = odds_div.find_elements(
                 By.TAG_NAME, "span"
             )
-
-            matches_table = self.driver.find_element(By.ID, "Table3")
-            matches_table_trs = matches_table.find_elements(By.TAG_NAME, "tr")
-
-            matches = matches_table_trs[2:]  # Remove the first unused rows
-
+            
             for match in matches:
                 match_data = self.get_match_data(
                     match=match,
@@ -189,6 +203,9 @@ class NowGoalScrapperService(DriverMixin):
                     continue
 
                 matches_data.append(match_data)
+
+            if matches:
+                prev_first_match = matches[0]
 
         matches_data_df = pd.DataFrame(matches_data)
 
