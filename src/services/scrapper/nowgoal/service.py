@@ -146,10 +146,12 @@ class NowGoalScrapperService(DriverMixin):
                     continue
 
                 return None
-            
-    def get_match_html_elements(self, prev_first_match: t.Optional[WebElement]) -> t.List[WebElement]:
+
+    def get_match_html_elements(
+        self, prev_first_match: t.Optional[WebElement]
+    ) -> t.List[WebElement]:
         for i in range(2):
-            time.sleep(i+1)
+            time.sleep(i + 1)
 
             matches_table = self.driver.find_element(By.ID, "Table3")
             matches_table_trs = matches_table.find_elements(By.TAG_NAME, "tr")
@@ -161,7 +163,7 @@ class NowGoalScrapperService(DriverMixin):
                 continue
 
             return matches
-        
+
         return []
 
     def nowgoal_scrapper(self) -> None:
@@ -190,7 +192,7 @@ class NowGoalScrapperService(DriverMixin):
             ahc_span, moneyline_span, totals_span = odds_div.find_elements(
                 By.TAG_NAME, "span"
             )
-            
+
             for match in matches:
                 match_data = self.get_match_data(
                     match=match,
