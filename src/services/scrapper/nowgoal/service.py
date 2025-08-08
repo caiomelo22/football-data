@@ -30,7 +30,10 @@ class NowGoalScrapperService(DriverMixin):
         for col in betting_cols:
             col_text = col.text
 
-            if "/" not in col_text:
+            if not col_text:
+                betting_cols_formatted.append(None)
+                continue
+            elif "/" not in col_text:
                 betting_cols_formatted.append(float(col_text))
                 continue
 
