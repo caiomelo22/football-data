@@ -30,17 +30,17 @@ def insert_nowgoal_matches(matches_data_df: pd.DataFrame, pk_cols: t.List[str]) 
 # Load environment variables from the .env file
 load_dotenv()
 
-first_season = 2012
-last_season = 2025
+first_season = 2020
+last_season = 2020
 
-league_id = 36
-league = "premier-league"
-country = "england"
+league_id = 21
+league = "mls"
+country = "usa"
 
 create_nowgoal_matches_table = True
-single_year_season = False
+single_year_season = True
 
-for season in range(first_season, last_season):
+for season in range(first_season, last_season + 1):
     if single_year_season:
         season_str = f"{season}"
     else:
