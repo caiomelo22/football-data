@@ -169,6 +169,63 @@ class NowGoalScrapperService(DriverMixin):
 
         return []
 
+    def scrape_league_by_round(
+        self, prev_first_match: t.Optional[WebElement] = None
+    ) -> t.Tuple[t.List[dict], t.Optional[WebElement]]:
+        round_matches = []
+
+        matches = self.get_match_html_elements(prev_first_match)
+
+        odds_div = self.driver.find_element(By.CLASS_NAME, "odds")
+
+        ahc_span, moneyline_span, totals_span = odds_div.find_elements(
+            By.TAG_NAME, "span"
+        )
+
+        for match in matches:
+            match_data = self.get_match_data(
+                match=match,
+                ahc_span=ahc_span,
+                moneyline_span=moneyline_span,
+                totals_span=totals_span,
+            )
+
+            if not match_data:
+                continue
+
+            round_matches.append(match_data)
+
+        if matches:
+            prev_first_match = matches[0]
+
+        # Return the round matches and the first match element to be defined as the prev_first_match
+        return round_matches, prev_first_match
+
+    def scrape_league_by_stage(self) -> t.List[dict]:
+        round_tds = self.driver.find_elements(By.CLASS_NAME, "lsm2")
+
+        # If there are multiple rounds in the competition
+        if round_tds:
+            stage_matches = []
+            prev_first_match = None
+
+            # Iterate through the rounds
+            for i in tqdm(range(len(round_tds))):
+                round_td = round_tds[i]
+
+                round_td.click()
+
+                round_matches, prev_first_match = self.scrape_league_by_round(
+                    prev_first_match
+                )
+
+                stage_matches.extend(round_matches)
+        else:
+            # Competition with a single round
+            stage_matches, _ = self.scrape_league_by_round()
+
+        return stage_matches
+
     def nowgoal_scrapper(self) -> None:
         url = f"https://football.nowgoal.com/league/{self.season_str}/{self.nowgoal_league_id}"
         self.driver.get(url)
@@ -177,40 +234,31 @@ class NowGoalScrapperService(DriverMixin):
 
         time.sleep(3)
 
-        matches_data = []
+        stages_div = self.driver.find_element(By.ID, "SubSelectDiv")
 
-        round_tds = self.driver.find_elements(By.CLASS_NAME, "lsm2")
+        # Check if there is more than one stage in the competition
+        if stages_div:
+            stages_elements = stages_div.find_elements(By.TAG_NAME, "li")
+            stages = [se.text for se in stages_elements]
 
-        prev_first_match = None
+            matches_data = []
 
-        for i in tqdm(range(len(round_tds))):
-            round_td = round_tds[i]
-
-            round_td.click()
-
-            matches = self.get_match_html_elements(prev_first_match)
-
-            odds_div = self.driver.find_element(By.CLASS_NAME, "odds")
-
-            ahc_span, moneyline_span, totals_span = odds_div.find_elements(
-                By.TAG_NAME, "span"
-            )
-
-            for match in matches:
-                match_data = self.get_match_data(
-                    match=match,
-                    ahc_span=ahc_span,
-                    moneyline_span=moneyline_span,
-                    totals_span=totals_span,
+            # Iterate through each stage
+            for stage in stages:
+                stage_element = self.driver.find_element(
+                    By.XPATH, f"//li[text()='{stage}']"
                 )
 
-                if not match_data:
-                    continue
+                stage_element.click()
 
-                matches_data.append(match_data)
+                time.sleep(1)
 
-            if matches:
-                prev_first_match = matches[0]
+                stage_matches = self.scrape_league_by_stage()
+
+                matches_data.extend(stage_matches)
+        else:
+            # Single format competition
+            matches_data = self.scrape_league_by_stage()
 
         matches_data_df = pd.DataFrame(matches_data)
 
