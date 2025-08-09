@@ -16,12 +16,44 @@ advanced_stats_table = "matches_v2_advanced_stats"
 # General infos
 leagues_to_refresh = [
     {
+        "single_year_season": False,
+        "include_advanced_stats": False,
+        "fbref_league_id": 11,
+        "league": "serie-a",
+        "country": "italy",
+        "nowgoal_league_id": 34,
+    },
+    {
+        "single_year_season": False,
+        "include_advanced_stats": False,
+        "fbref_league_id": 32,
+        "league": "liga-portugal",
+        "country": "portugal",
+        "nowgoal_league_id": 23,
+    },
+    {
+        "single_year_season": False,
+        "include_advanced_stats": False,
+        "fbref_league_id": 9,
+        "league": "premier-league",
+        "country": "england",
+        "nowgoal_league_id": 36,
+    },
+    {
+        "single_year_season": False,
+        "include_advanced_stats": False,
+        "fbref_league_id": 10,
+        "league": "championship",
+        "country": "england",
+        "nowgoal_league_id": 37,
+    },
+    {
         "single_year_season": True,
         "include_advanced_stats": False,
         "fbref_league_id": 22,
         "league": "mls",
         "country": "usa",
-        "nowgoal_league_id": None,
+        "nowgoal_league_id": 21,
     },
     {
         "single_year_season": True,
@@ -37,7 +69,7 @@ leagues_to_refresh = [
         "fbref_league_id": 29,
         "league": "allsvenskan",
         "country": "sweden",
-        "nowgoal_league_id": None,
+        "nowgoal_league_id": 26,
     },
     {
         "single_year_season": False,
@@ -45,7 +77,7 @@ leagues_to_refresh = [
         "fbref_league_id": 13,
         "league": "ligue-1",
         "country": "france",
-        "nowgoal_league_id": None,
+        "nowgoal_league_id": 11,
     },
     {
         "single_year_season": False,
@@ -53,7 +85,7 @@ leagues_to_refresh = [
         "fbref_league_id": 23,
         "league": "eredivisie",
         "country": "netherlands",
-        "nowgoal_league_id": None,
+        "nowgoal_league_id": 16,
     },
     {
         "single_year_season": False,
@@ -61,7 +93,7 @@ leagues_to_refresh = [
         "fbref_league_id": 12,
         "league": "laliga",
         "country": "spain",
-        "nowgoal_league_id": None,
+        "nowgoal_league_id": 31,
     },
     {
         "single_year_season": False,
@@ -69,7 +101,7 @@ leagues_to_refresh = [
         "fbref_league_id": 20,
         "league": "bundesliga",
         "country": "germany",
-        "nowgoal_league_id": None,
+        "nowgoal_league_id": 8,
     },
 ]
 
