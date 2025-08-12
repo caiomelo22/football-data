@@ -215,6 +215,8 @@ class NowGoalScrapperService(DriverMixin):
 
                 round_td.click()
 
+                time.sleep(1)
+
                 round_matches, prev_first_match = self.scrape_league_by_round(
                     prev_first_match
                 )
@@ -234,7 +236,7 @@ class NowGoalScrapperService(DriverMixin):
 
         time.sleep(3)
 
-        stages_div = self.driver.find_element(By.ID, "SubSelectDiv")
+        stages_div = self.find_element_no_exception(By.ID, "SubSelectDiv")
 
         # Check if there is more than one stage in the competition
         if stages_div:

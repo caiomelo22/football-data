@@ -3,6 +3,8 @@ from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.common.exceptions import NoSuchElementException
 
 
 class DriverMixin:
@@ -14,6 +16,14 @@ class DriverMixin:
         self.season = season
         self.single_year_season = single_year_season
         self.driver = None
+
+    def find_element_no_exception(self, by: str, arg: str) -> t.Optional[WebElement]:
+        try:
+            element = self.driver.find_element(by, arg)
+        except NoSuchElementException:
+            element = None
+
+        return element
 
     def start_driver(self) -> None:
         # Set Chrome options (for example, to run headless if desired)
