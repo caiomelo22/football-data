@@ -16,6 +16,14 @@ advanced_stats_table = "matches_v2_advanced_stats"
 # General infos
 leagues_to_refresh = [
     {
+        "single_year_season": True,
+        "include_advanced_stats": False,
+        "fbref_league_id": 24,
+        "league": "serie-a",
+        "country": "brazil",
+        "nowgoal_league_id": 4,
+    },
+    {
         "single_year_season": False,
         "include_advanced_stats": False,
         "fbref_league_id": 11,
@@ -61,7 +69,7 @@ leagues_to_refresh = [
         "fbref_league_id": 25,
         "league": "j1-league",
         "country": "japan",
-        "nowgoal_league_id": None,
+        "nowgoal_league_id": 25,
     },
     {
         "single_year_season": True,
