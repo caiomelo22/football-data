@@ -296,6 +296,11 @@ class FbrefScrapperService(DriverMixin):
 
         self.fbref_data_df = pd.DataFrame(complete_matches)
 
+        # Convert the xg columns to float
+        self.fbref_data_df["home_xg"] = self.fbref_data_df["home_xg"].astype("float")
+        self.fbref_data_df["away_xg"] = self.fbref_data_df["away_xg"].astype("float")
+
+        # Set the league column
         self.fbref_data_df["league"] = self.league_str
 
         if self.include_advanced_stats:

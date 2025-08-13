@@ -110,6 +110,9 @@ class ScrapperService(FbrefScrapperService, NowGoalScrapperService):
         # Add betting cols to the Fbref DF
         for betting_col in betting_cols:
             self.fbref_data_df[betting_col] = None
+            self.fbref_data_df[betting_col] = self.fbref_data_df[betting_col].astype(
+                "float"
+            )
 
         print("Matching seasons data:")
 
